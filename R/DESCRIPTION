@@ -1,0 +1,31 @@
+Package: genevintage
+Title: Date the Annotation Vintage of a Set of Gene Identifiers
+Version: 0.1.0
+Authors@R:
+    person("Saket", "Choudhary", email = "saketc@iitb.ac.in", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-5202-7633"))
+Description: Genevintage detects the species from the
+    identifier prefixes and ranks the 'Ensembl' or 'GENCODE' releases consistent
+    with the set, then converts the identifiers to gene names. It also supports
+    methods to retrieve gene by class (mitochondrial, sex-linked,
+    protein-coding, ribosomal, transfer RNA, long non-coding RNA) and mapping 
+    genes to their orthologs in another species. 
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.1.0)
+Imports: stats, tools, utils
+Suggests:
+    Matrix,
+    knitr,
+    methods,
+    rmarkdown,
+    spelling,
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+URL: https://github.com/saketlab/genevintage
+BugReports: https://github.com/saketlab/genevintage/issues
+Config/roxygen2/version: 8.1.0
+VignetteBuilder: knitr
+Language: en-US

@@ -1,0 +1,144 @@
+url: https://saketlab.github.io/genevintage
+
+development:
+  mode: auto
+
+template:
+  bootstrap: 5
+  light-switch: true
+  preset: default
+  includes:
+    in_header: |
+      <meta name="keywords" content="genevintage, R package, Ensembl, GENCODE, gene identifiers, gene symbols, annotation release, orthologs, RNA-seq">
+      <meta name="author" content="Saket Choudhary">
+      <meta property="og:type" content="website">
+      <meta property="og:site_name" content="genevintage">
+      <meta property="og:locale" content="en_US">
+
+home:
+  title: "Date a set of gene identifiers"
+  description: >
+    Detect the species and annotation release a vector of gene identifiers came
+    from, convert them to gene names, group genes by class, and map them to
+    orthologs in another species.
+
+  links:
+  - text: How the dating works
+    href: articles/how-it-works.html
+  - text: Report a bug
+    href: https://github.com/saketlab/genevintage/issues
+
+navbar:
+  structure:
+    left:  [get_started, reference, articles, news]
+    right: [search, lightswitch, github, website]
+
+  components:
+    get_started:
+      text: Get Started
+      href: articles/genevintage.html
+
+    reference:
+      text: Reference
+      href: reference/index.html
+
+    github:
+      icon: fab fa-github fa-lg
+      href: https://github.com/saketlab/genevintage
+      aria-label: GitHub
+
+    website:
+      text: Saket Lab
+      href: https://saketlab.in/
+
+articles:
+- title: Guides
+  navbar: ~
+  contents:
+  - genevintage
+  - how-it-works
+
+reference:
+- title: Naming
+  desc: Identifiers to gene names, keeping the identifier when there is no name
+  contents:
+  - geneid2name
+  - gene_names
+  - gene_ids
+  - annotate_genes
+  - correct_names
+  - rename_rows
+
+- title: Dating
+  desc: >
+    Which species and which release a set of identifiers came from, as a ranked
+    table rather than a single answer
+  contents:
+  - detect_species
+  - detect_release
+  - compare_releases
+  - guess_scheme
+  - parse_ens
+  - qmax_violations
+
+- title: Species
+  desc: Name a species however you say it, and see what the index covers
+  contents:
+  - resolve_species
+  - species_table
+
+- title: Gene sets
+  desc: >
+    Genes by what they are rather than by name, read from the annotation so the
+    rules hold across clades
+  contents:
+  - mito_genes
+  - sex_genes
+  - hemoglobin_genes
+  - mhc_genes
+  - coding_genes
+  - noncoding_genes
+  - ribosomal_genes
+  - trna_genes
+  - rrna_genes
+  - lncrna_genes
+  - gene_biotypes
+  - genes_by_biotype
+
+- title: Orthologs
+  desc: The same gene in another species, in whichever direction Compara recorded it
+  contents:
+  - orthologs
+  - ortholog_species
+
+- title: Cross-references
+  desc: Ensembl identifiers in other identifier systems
+  contents:
+  - entrez_ids
+  - fetch_xrefs
+
+- title: Annotations
+  desc: The streaming and caching layer underneath
+  contents:
+  - fetch_mapping
+  - fetch_orthologs
+  - stream_gtf
+  - stream_homologies
+  - stream_xrefs
+  - gene_cache
+
+- title: Package
+  contents:
+  - genevintage-package
+
+authors:
+  Saket Choudhary:
+    href: https://saket-choudhary.me/
+
+footer:
+  structure:
+    left: developed_by
+    right: built_with
+  components:
+    developed_by: "Developed by [Saket Lab](https://saketlab.org)"
+    built_with: "Built with [pkgdown](https://pkgdown.r-lib.org/)"
