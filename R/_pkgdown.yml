@@ -57,6 +57,7 @@ articles:
   contents:
   - genevintage
   - how-it-works
+  - matrix-rows
 
 reference:
 - title: Naming
@@ -67,6 +68,7 @@ reference:
   - gene_ids
   - annotate_genes
   - correct_names
+  - correct_rows
   - rename_rows
 
 - title: Dating

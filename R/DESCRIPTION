@@ -1,6 +1,7 @@
 Package: genevintage
-Title: Date the Annotation Vintage of a Set of Gene Identifiers
-Version: 0.1.0
+Title: Identify the Build Annotation Associated with a Set of Gene
+    Identifiers
+Version: 0.1.1
 Authors@R:
     person("Saket", "Choudhary", email = "saketc@iitb.ac.in", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-5202-7633"))
@@ -8,13 +9,14 @@ Description: Genevintage detects the species from the
     identifier prefixes and ranks the 'Ensembl' or 'GENCODE' releases consistent
     with the set, then converts the identifiers to gene names. It also supports
     methods to retrieve gene by class (mitochondrial, sex-linked,
-    protein-coding, ribosomal, transfer RNA, long non-coding RNA) and mapping 
-    genes to their orthologs in another species. 
+    protein-coding, ribosomal, transfer RNA, long non-coding RNA) and mapping
+    genes to their orthologs in another species.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.1.0)
 Imports: stats, tools, utils
 Suggests:
+    curl,
     Matrix,
     knitr,
     methods,

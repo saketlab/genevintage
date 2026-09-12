@@ -15,6 +15,7 @@ FPKM
 GENCODE
 GENCODE's
 GRCh
+GSE
 GTF
 GTFs
 HGNC
@@ -46,6 +47,8 @@ biotypes
 checkable
 clade
 disambiguated
+disambiguates
+disambiguating
 elegans
 et
 exonic
@@ -62,6 +65,7 @@ miRNA
 mitoribosome
 mitoribosome's
 mulatta
+myoblast
 ncRNA
 ncRNAs
 neighbourhoods

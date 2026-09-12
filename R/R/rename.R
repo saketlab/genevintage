@@ -1,5 +1,20 @@
 # Matrix in, same matrix out, gene names on the rows.
 
+#' Validate row identifiers against a matrix's row count
+#'
+#' Shared by [rename_rows()] and [correct_rows()].
+#' @noRd
+.check_row_ids <- function(x, ids) {
+  if (is.null(ids)) {
+    stop("`x` has no row names; pass `ids` instead.", call. = FALSE)
+  }
+  if (length(ids) != nrow(x)) {
+    stop(sprintf("`ids` has %d entries but `x` has %d rows.", length(ids), nrow(x)),
+      call. = FALSE
+    )
+  }
+}
+
 #' Replace a matrix's row identifiers with gene names
 #'
 #' Detects and converts the row identifiers, then puts the names back on the
@@ -43,14 +58,7 @@
 rename_rows <- function(x, ids = rownames(x), species = NULL, release = NULL,
                         assembly = NULL, source = NULL, mapping = NULL,
                         unique = TRUE, quiet = FALSE) {
-  if (is.null(ids)) {
-    stop("`x` has no row names; pass `ids` instead.", call. = FALSE)
-  }
-  if (length(ids) != nrow(x)) {
-    stop(sprintf("`ids` has %d entries but `x` has %d rows.", length(ids), nrow(x)),
-      call. = FALSE
-    )
-  }
+  .check_row_ids(x, ids)
   nm <- if (is.null(mapping)) {
     geneid2name(ids,
       species = species, release = release, assembly = assembly,

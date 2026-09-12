@@ -7,6 +7,33 @@
 #' @noRd
 .is_name <- function(name, id) !is.na(name) & nzchar(name) & name != id
 
+#' The collision warning, classed so a caller can catch just this one
+#'
+#' A caller who always disambiguates downstream (e.g. with `make.unique()`)
+#' needs to muffle only this warning, not the unrelated ones `gene_names()`
+#' and `geneid2name()` also raise. Matching on class beats matching on this
+#' message's text, which can be reworded without notice.
+#' @noRd
+.duplicate_names_condition <- function(n) {
+  warningCondition(
+    sprintf("%d duplicate names; pass `unique = TRUE` to disambiguate.", n),
+    class = "genevintage_duplicate_names"
+  )
+}
+
+#' Suffix colliding names with a token, then guarantee uniqueness
+#'
+#' Shared by [gene_names()] and [correct_names()]: only an entry that is both
+#' colliding and genuinely resolved (`ok`) gets the `tag` suffix, or two
+#' untouched duplicates (e.g. two unmapped ids) would self-suffix into
+#' "tok_tok"; any remaining collision still falls to [make.unique()].
+#' @noRd
+.suffix_collisions <- function(out, ok, tag) {
+  coll <- duplicated(out) | duplicated(out, fromLast = TRUE)
+  out[coll & ok] <- paste0(out[coll & ok], "_", tag[coll & ok])
+  make.unique(out, sep = "_")
+}
+
 #' Convert gene identifiers to gene names
 #'
 #' Returns one value per input, in the input's order. An identifier with no
@@ -21,7 +48,9 @@
 #'   character vector of names indexed by identifier.
 #' @param unique Make the result unique by appending the identifier to names
 #'   that would otherwise collide. Off by default, since it changes names.
-#' @param warn Warn when names collide or when little of the input mapped.
+#' @param warn Warn when names collide or when little of the input mapped. The
+#'   collision warning carries class `genevintage_duplicate_names`, so a caller
+#'   that disambiguates downstream can catch and muffle just that one.
 #'
 #' @return A character vector the same length as `ids`, carrying a `mapped`
 #'   attribute: the logical vector of which inputs found a real name.
@@ -71,19 +100,13 @@ gene_names <- function(ids, mapping, unique = FALSE, warn = TRUE) {
   out <- .coalesce(unname(hit), ids) # the retention rule
 
   if (unique) {
-    # suffix collisions with the id; repeated input ids still collide after that
-    coll <- duplicated(out) | duplicated(out, fromLast = TRUE)
-    out[coll & mapped] <- paste0(out[coll & mapped], "_", ids[coll & mapped])
-    out <- make.unique(out, sep = "_")
+    out <- .suffix_collisions(out, mapped, ids)
   }
 
   if (warn) {
     n_dup <- sum(duplicated(out))
     if (n_dup > 0 && !unique) {
-      warning(sprintf(
-        "%d duplicate names; pass `unique = TRUE` to disambiguate.",
-        n_dup
-      ), call. = FALSE)
+      warning(.duplicate_names_condition(n_dup))
     }
     if (length(mapped) && mean(mapped) < 0.5) {
       warning(sprintf(

@@ -4,11 +4,11 @@
 \name{genevintage-package}
 \alias{genevintage}
 \alias{genevintage-package}
-\title{genevintage: Date the Annotation Vintage of a Set of Gene Identifiers}
+\title{genevintage: Identify the Build Annotation Associated with a Set of Gene Identifiers}
 \description{
-\if{html}{\figure{logo.svg}{options: style='float: right' alt='logo' width='120'}}
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Given a vector of gene identifiers, detects the species from the identifier prefixes and ranks the 'Ensembl' or 'GENCODE' releases consistent with the set, then converts the identifiers to gene names. Identifiers with no gene name are returned unchanged, so results stay usable as row labels. Further functions return genes by class (mitochondrial, sex-linked, protein-coding, ribosomal, transfer RNA, long non-coding RNA) and map genes to their orthologs in another species. Release fingerprints ship with the package; mapping tables are streamed from the 'Ensembl' GTF on first use and cached for offline reuse, as described at \url{https://www.ensembl.org/info/data/ftp/index.html}.
+Genevintage detects the species from the identifier prefixes and ranks the 'Ensembl' or 'GENCODE' releases consistent with the set, then converts the identifiers to gene names. It also supports methods to retrieve gene by class (mitochondrial, sex-linked, protein-coding, ribosomal, transfer RNA, long non-coding RNA) and mapping genes to their orthologs in another species.
 }
 \seealso{
 Useful links:

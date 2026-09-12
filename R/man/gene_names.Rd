@@ -15,7 +15,9 @@ character vector of names indexed by identifier.}
 \item{unique}{Make the result unique by appending the identifier to names
 that would otherwise collide. Off by default, since it changes names.}
 
-\item{warn}{Warn when names collide or when little of the input mapped.}
+\item{warn}{Warn when names collide or when little of the input mapped. The
+collision warning carries class \code{genevintage_duplicate_names}, so a caller
+that disambiguates downstream can catch and muffle just that one.}
 }
 \value{
 A character vector the same length as \code{ids}, carrying a \code{mapped}

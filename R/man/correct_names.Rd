@@ -11,6 +11,7 @@ correct_names(
   assembly = NULL,
   source = NULL,
   mapping = NULL,
+  unique = FALSE,
   quiet = FALSE
 )
 }
@@ -24,6 +25,11 @@ correct_names(
 custom build, or a species the index does not cover. A data frame with at
 least \code{id}, \code{name}, \code{chr} and \code{biotype}, as \code{\link[=fetch_mapping]{fetch_mapping()}} returns.
 Nothing is detected or downloaded when it is supplied.}
+
+\item{unique}{Make the result unique by appending the damaged token to a
+repaired name that collides with another (as \code{\link[=gene_names]{gene_names()}} does), then
+falling back to \code{\link[=make.unique]{make.unique()}} for any collision that remains. Off by
+default, since it changes names.}
 
 \item{quiet}{Suppress the message reporting what was detected.}
 }
@@ -52,6 +58,12 @@ release 116. A fixed lookup table cannot be right for both.
 Tokens that are not damaged are returned unchanged, so the result drops
 straight back into \code{rownames()}. A token with no surviving candidate, or with
 more than one, is also returned unchanged and reported.
+
+A damaged token carries no species of its own, so pass \code{mapping}, or both
+\code{species} and \code{release}, whenever \code{x} contains one. Choosing the release
+explicitly also decides historical names such as \code{SEPT9} versus \code{SEPTIN9};
+left to detect, a symbol-only vector would silently default to the newest
+release instead of refusing to guess.
 }
 \examples{
 \dontrun{
