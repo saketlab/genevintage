@@ -36,7 +36,10 @@ QMAX_TOLERANCE <- 0.999
 })
 
 # string order puts "100" before "50"; GENCODE mouse is M10..M37, so strip first
-.rel_num <- function(x) suppressWarnings(as.numeric(sub("^M", "", x)))
+.rel_num <- function(x) {
+  # Historical GENCODE releases include 2b, 3b and 3c as well as mouse M tags.
+  suppressWarnings(as.numeric(sub("^[^0-9]*([0-9]+).*$", "\\1", x)))
+}
 
 # The newest indexed release for a species. Used where the question is about
 # stable identifiers rather than vintage: the newest release knows the most

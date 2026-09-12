@@ -95,8 +95,8 @@ geneid2name <- function(ids, species = NULL, release = NULL, assembly = NULL,
       feas <- rel[!is.na(rel$feasible) & rel$feasible, ]
       n_close <- if (nrow(feas)) sum(feas$dist <= feas$dist[1] * 1.1) else 0L
       message(sprintf(
-        "%s, %s release %s (assembly %s)%s", species, source, release, assembly,
-        if (n_close > 1) sprintf(" -- %d fit equally well", n_close) else ""
+        "Best fingerprint match: %s, %s release %s (assembly %s)%s", species, source, release, assembly,
+        if (n_close > 1) sprintf(" -- %d candidates score within 10%%", n_close) else ""
       ))
     }
   }

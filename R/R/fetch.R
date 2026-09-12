@@ -365,7 +365,11 @@ fetch_mapping <- function(species, release, assembly = NULL, source = NULL,
     }
   }
 
-  if (startsWith(row$source, "gencode")) {
+  if ("annotation_url" %in% names(row) && !is.na(row$annotation_url) &&
+      nzchar(row$annotation_url)) {
+    # Old archives use filenames such as gencode_v4.annotation.GRCh37.gtf.gz.
+    url <- row$annotation_url
+  } else if (startsWith(row$source, "gencode")) {
     url <- .gencode_url(row$annotation_root, species, rel, row$source)
   } else {
     dir_url <- sprintf("%s/release-%s/gtf/%s/", row$annotation_root, rel, species)
