@@ -6,10 +6,8 @@
 #' The reverse of [gene_names()]. Published marker lists and enrichment results
 #' carry symbols or Entrez identifiers; count matrices carry Ensembl ones.
 #'
-#' Neither input is a key. A symbol can name several genes, and an Entrez
-#' identifier can cross-reference several, so every match is returned and the
-#' result is a table rather than a vector. An input matching nothing is kept
-#' with `id = NA`, so nothing disappears silently.
+#' Symbols and Entrez identifiers can each match multiple genes, so the table
+#' returns every match. Unmatched inputs are retained with `id = NA`.
 #'
 #' @inheritParams mito_genes
 #' @param x Gene names, or Entrez identifiers.
@@ -30,8 +28,7 @@ gene_ids <- function(x, from = c("auto", "name", "entrez"), species = NULL,
   x <- .as_ids(x)
   if (from == "auto") from <- if (length(x) && all(grepl("^[0-9]+$", x))) "entrez" else "name"
 
-  # a supplied mapping carries names, not cross-references, and the settled rule
-  # is that it fetches nothing; say so rather than reaching for the network
+  # Entrez lookup through a supplied mapping requires its own entrez column
   if (from == "entrez" && !is.null(mapping) && !"entrez" %in% names(mapping)) {
     stop("`mapping` carries no cross-references; give it an `entrez` column, ",
       "or name `species` and `release` instead of `mapping`.",
@@ -71,11 +68,8 @@ gene_ids <- function(x, from = c("auto", "name", "entrez"), species = NULL,
   .keep_unmatched(hit, x)
 }
 
-# NA-indexed to pad unmatched tokens, rather than rbinding a pad frame, which
-# coerced start/end to character.
-#
-# indexed lookup avoids a per-token by[[t]] scan, which is quadratic and
-# slow on a matrix's row names.
+# pad unmatched tokens with NA row indices to preserve column types;
+# grouped positions expand multiple matches in input order
 .keep_unmatched <- function(hit, x) {
   u <- unique(x)
   pos <- match(hit$input, u)
@@ -103,14 +97,14 @@ gene_ids <- function(x, from = c("auto", "name", "entrez"), species = NULL,
 #' or as names. The caller's own token comes back in `input`, so the result
 #' joins straight onto a results table or a feature frame.
 #'
-#' An input matching nothing is kept with `NA` columns rather than dropped, and
-#' a name matching several genes yields a row for each.
+#' Unmatched inputs are retained with `NA` columns. Names matching several
+#' genes yield a row for each.
 #'
 #' @inheritParams mito_genes
 #' @return A data frame of `input`, `id`, `name`, `chr`, `biotype` and, where
 #'   the annotation carries them, `start`, `end`, `strand` and `span`. `span` is
-#'   the genomic extent, not the exonic length -- see [stream_gtf()].
-#' @seealso [gene_names()] when one value per input is what you want.
+#'   the genomic extent from first to last base. See [stream_gtf()].
+#' @seealso [gene_names()] for one value per input.
 #' @export
 #' @examples
 #' \dontrun{

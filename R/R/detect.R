@@ -6,8 +6,7 @@ QMAX_TOLERANCE <- 0.999
 
 #' Read once, keep for the session
 #'
-#' The index, the species roster derived from it and the common-name table are
-#' all read-once-and-hold; this is the shell all three shared.
+#' Cache the first non-NULL result for subsequent calls.
 #' @noRd
 .once <- function(f) {
   v <- NULL
@@ -21,7 +20,7 @@ QMAX_TOLERANCE <- 0.999
 #' @noRd
 .extdata <- function(name) {
   f <- system.file("extdata", name, package = "genevintage")
-  if (!nzchar(f)) f <- file.path("inst/extdata", name) # sourced, not installed
+  if (!nzchar(f)) f <- file.path("inst/extdata", name) # fallback for sourced code
   f
 }
 
@@ -35,15 +34,13 @@ QMAX_TOLERANCE <- 0.999
   readRDS(f)
 })
 
-# string order puts "100" before "50"; GENCODE mouse is M10..M37, so strip first
+# compare release numbers numerically after removing GENCODE letter tags
 .rel_num <- function(x) {
   # Historical GENCODE releases include 2b, 3b and 3c as well as mouse M tags.
   suppressWarnings(as.numeric(sub("^[^0-9]*([0-9]+).*$", "\\1", x)))
 }
 
-# The newest indexed release for a species. Used where the question is about
-# stable identifiers rather than vintage: the newest release knows the most
-# genes, and old stable ids stay valid in it.
+# Use the newest indexed release for stable-identifier lookups.
 .newest_release <- function(species, source = "ensembl") {
   fp <- .fp()
   r <- fp$release[fp$species == species & fp$source == source]
@@ -57,12 +54,13 @@ QMAX_TOLERANCE <- 0.999
 #'
 #' Identifier numbers are assigned upward, so `qmax` should not fall as releases
 #' advance within one species and assembly. Ensembl retires genes at the top of
-#' the range occasionally, so only a fall of more than 1% is reported. Schemes whose numbers are not ordered are exempt.
+#' the range occasionally, so only a fall of more than 1% is reported.
+#' Only numerically ordered schemes are checked.
 #'
 #' @param fp A fingerprint index. Defaults to the shipped one.
 #' @return A character vector of violation messages, empty when the index is sound.
 #' @examples
-#' # the shipped index reports its own exceptions rather than hiding them
+#' # report ordering violations in the shipped index
 #' qmax_violations()
 #' @export
 qmax_violations <- function(fp = .fp()) {
@@ -71,8 +69,7 @@ qmax_violations <- function(fp = .fp()) {
     return(character())
   }
   key <- paste(fp$source, fp$species, fp$assembly)
-  # sort once and compare neighbours; subsetting the frame per group was the
-  # whole cost, and this runs in an example on every R CMD check
+  # sort by group and release so neighbouring qmax values can be compared
   o <- order(key, .rel_num(fp$release))
   k <- key[o]
   q <- fp$qmax[o]
@@ -93,8 +90,7 @@ qmax_violations <- function(fp = .fp()) {
 #' The distinct species rows, derived once from the index
 #' @noRd
 .known_species <- .once(function() {
-  # human has Ensembl and GENCODE rows sharing the ENSG prefix; keying on
-  # division reported it as "2 species ... (homo_sapiens, homo_sapiens)"
+  # merge annotation sources sharing a species, prefix and scheme
   x <- .fp()[, c("species", "division", "prefix", "scheme", "source")]
   x <- x[order(x$source != "ensembl"), ] # keep the Ensembl division
   x <- x[!duplicated(paste(x$species, x$prefix, x$scheme)), ]
@@ -122,29 +118,25 @@ qmax_violations <- function(fp = .fp()) {
 
 #' Which species a set of identifiers belongs to
 #'
-#' Read from the identifier prefix, which is a property of the IDs themselves
-#' rather than of any metadata that might be wrong about them.
+#' Matches identifier prefixes to indexed species.
 #'
 #' @param ids Character vector of gene identifiers.
 #' @return A data frame of candidate species ordered by the share of `ids` they
 #'   explain, with columns `species`, `common`, `division`, `prefix`, `scheme`
 #'   and `frac`.
-#'   Several
-#'   rows can tie at the same `frac`: dog breeds and mouse strains share an
-#'   identifier space, so identifiers alone cannot separate them. Check for ties
-#'   rather than taking the first row when that distinction matters.
+#'   Rows can tie at the same `frac`: dog breeds and mouse strains share an
+#'   identifier space. Check for ties when that distinction matters.
 #' @examples
 #' detect_species(c("ENSMUSG00000051951", "ENSMUSG00000089699"))
 #'
-#' # the prefix, not the metadata: these are bonobo, whatever the study says
+#' # the prefix identifies bonobo
 #' detect_species("ENSPPAG00000021109")[1, c("species", "common", "frac")]
 #' @export
 detect_species <- function(ids) {
   ids <- .bare(ids)
   ids <- ids[!is.na(ids) & nzchar(ids)]
   known <- .known_species()
-  # no ids means no candidate; the fractions divide by length(ids), and NaN > 0
-  # is NA, which admits every species as explaining an empty input
+  # empty input returns no candidates, avoiding undefined fractions
   if (!length(ids)) known <- known[0, ]
   # Ensembl patterns differ only in the stem, so one extraction and a table
   # answers all of them at once
@@ -171,8 +163,7 @@ detect_species <- function(ids) {
     frac[i] <- mean(grepl(.species_pattern(known$scheme[i], known$prefix[i]), ids))
   }
   known$frac <- frac
-  # only species some id could belong to need ranking; dropping the rest first
-  # takes the index grouping below from 359 species to a handful
+  # rank only species with a matching identifier
   known <- known[frac > 0, ]
 
   # prefixes are shared between species, so frac ties and a name tie-break would
@@ -194,9 +185,7 @@ detect_species <- function(ids) {
   reach <- !is.finite(obs_max) | !is.finite(q) | q >= obs_max * QMAX_TOLERANCE
   fit <- unname(fit_by[known$species])
 
-  # a longer prefix still beats the shorter one it contains (ENSMUSG over ENSG)
-  # reach, then gene-count fit, then name for a stable order. species sharing an
-  # identifier space are indistinguishable from ids alone, so ties are reported.
+  # rank by fraction, prefix length, reach, gene-count fit and species name
   known <- known[order(
     -known$frac, -nchar(known$prefix), !reach, fit,
     known$species
@@ -223,14 +212,10 @@ detect_species <- function(ids) {
 #'
 #' @return A data frame of candidate releases, best first, with `release`,
 #'   `source` (`ensembl`, `gencode` for GENCODE's primary-assembly gene set, or
-#'   `gencode_all` for its scaffold- and patch-inclusive one. The two differ by
-#'   thousands of genes and real pipelines split between them), `assembly`,
-#'   `feasible`, `dist` and
-#'   `n_index`. A release can appear twice
-#'   when it carries two assemblies: human release 112 ships GRCh37 and
-#'   GRCh38, and they fingerprint quite differently. Never a single release:
-#'   adjacent ones are
-#'   often indistinguishable, and the caller should see that.
+#'   `gencode_all` for its scaffold- and patch-inclusive one), `assembly`,
+#'   `feasible`, `dist` and `n_index`. Each assembly has its own row within a
+#'   release. All candidates are returned because adjacent releases can have
+#'   indistinguishable fingerprints.
 #' @examples
 #' ids <- readLines(system.file("extdata", "example_ids.txt.gz",
 #'   package = "genevintage"
@@ -261,8 +246,7 @@ detect_release <- function(ids, species = NULL) {
 
   ordered <- all(ref$ordered)
 
-  # vectorised over three scalars; bare is already computed, so pass it
-  # instead of letting .id_number() redo the work.
+  # reuse the bare identifiers when extracting their numeric parts
   num <- .id_number(ids, bare = bare)
   num <- num[is.finite(num)]
   if (ordered && !length(num)) {
@@ -299,7 +283,7 @@ detect_release <- function(ids, species = NULL) {
   rownames(out) <- NULL
   attr(out, "numeric_ordered") <- ordered
   if (!ordered) {
-    out$feasible <- NA # unknown, not established
+    out$feasible <- NA # feasibility is unknown
     message(sprintf(
       "%s identifiers are not numerically ordered; ranking by gene count alone.",
       ref$scheme[1]

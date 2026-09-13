@@ -6,15 +6,13 @@
 #' the newer release added, genes it dropped, and genes whose symbol or biotype
 #' changed. Rows that are identical in both are not returned.
 #'
-#' A gene absent from one release is reported as added or removed, which is not
-#' a claim about a replacement: Ensembl retires an identifier without naming a
-#' successor, and finding one is a separate question.
+#' Added and removed genes are identified by stable identifier presence.
+#' Finding a successor to a retired identifier requires a separate lookup.
 #'
 #' @param species Species in any form [resolve_species()] accepts.
 #' @param from,to The two releases, in either order.
 #' @param assembly,source Passed to [fetch_mapping()]. Both releases are read
-#'   from the same assembly and annotation family, since a comparison across
-#'   either is not a comparison of vintages.
+#'   from the same assembly and annotation family to isolate release changes.
 #' @param quiet Suppress the summary message.
 #' @return A data frame of `id`, `change` (`"added"`, `"removed"`, `"renamed"`
 #'   or `"retyped"`), `name_from`, `name_to`, `biotype_from` and `biotype_to`.
@@ -44,7 +42,7 @@ compare_releases <- function(species, from, to, assembly = NULL, source = NULL,
     stringsAsFactors = FALSE
   )
 
-  # a name is missing as often as it is changed, so compare on a placeholder
+  # paired missing values compare equal
   same <- function(x, y) (is.na(x) & is.na(y)) | (!is.na(x) & !is.na(y) & x == y)
   out$change <- ifelse(is.na(ia), "added",
     ifelse(is.na(ib), "removed",

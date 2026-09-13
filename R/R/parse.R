@@ -1,4 +1,4 @@
-# ID parsing and scheme detection. Everything downstream takes the parsed frame.
+# Identifier parsing, normalization and scheme detection.
 
 ENS_RX <- "^(ENS[A-Z]{0,4}?)([EGTPR])(\\d{11})(?:\\.(\\d+))?(_[A-Z0-9_]+)?$"
 
@@ -18,8 +18,7 @@ SCHEMES <- c(
 
 #' Identifiers as a character vector, or a clear refusal
 #'
-#' Three entry points took the same argument three ways and reported the same
-#' problem with three messages.
+#' Accept character vectors and convert factors to their labels.
 #' @noRd
 .as_ids <- function(ids) {
   if (is.character(ids)) {
@@ -33,37 +32,31 @@ SCHEMES <- c(
 
 #' Whether each element looks like a gene identifier of any known scheme
 #'
-#' Per element, not per vector: a caller may hand over identifiers and gene
-#' names mixed together, and deciding for the whole vector loses one or the
-#' other silently.
+#' Classify each element so callers can handle mixed identifiers and names.
 #' @noRd
 .looks_like_id <- function(x) grepl(.ANY_SCHEME, .bare(x), perl = TRUE)
 
-# The schemes as one alternation. Nine separate grepl passes over a matrix's
-# row names cost three times as much as a single anchored one.
+# combine schemes into one anchored alternation for a single matching pass
 .ANY_SCHEME <- paste0("^(?:", paste(sub("\\$$", "", sub("^\\^", "", SCHEMES)),
   collapse = "|"
 ), ")$")
 
 #' The numeric part of an identifier
 #'
-#' One definition, used both when the index is built and when input is scored
-#' against it. The `qmax` feasibility test compares the two, so they must not
-#' drift apart.
+#' Use the same numeric extraction for index construction and input scoring
+#' so `qmax` compares matching definitions.
 #' @noRd
 .id_number <- function(x, bare = .bare(x)) {
-  b <- bare
-  out <- rep(NA_real_, length(b))
+  out <- rep(NA_real_, length(bare))
   # digits only; si.dkey.219e24 would otherwise read as 2.19e26
-  ok <- grepl("^[^0-9]+[0-9]+$", b)
-  out[ok] <- as.numeric(sub("^[^0-9]+", "", b[ok]))
+  ok <- grepl("^[^0-9]+[0-9]+$", bare)
+  out[ok] <- as.numeric(sub("^[^0-9]+", "", bare[ok]))
   out
 }
 
 #' The version suffix of an identifier, or NA
 #'
-#' The scalar counterpart of [parse_ens()]'s `id_version` column, for callers
-#' that want only the versions and not a full parse frame.
+#' Extracts the version suffixes used in [parse_ens()]'s `id_version` column.
 #' @noRd
 .id_version <- function(x) {
   x <- .normalize_id(x)
@@ -75,29 +68,28 @@ SCHEMES <- c(
 
 #' Whether a scheme's identifiers are assigned in increasing numeric order
 #'
-#' Exactly "`.id_number()` yields a usable number", so the flag and the
-#' extraction cannot disagree. TAIR (`AT1G01010`) and SGD (`YDR387C`) embed the
-#' chromosome, so neither yields one and `qmax` tells you nothing about them.
+#' Require numeric extraction to succeed for more than 90% of identifiers.
+#' TAIR (`AT1G01010`) and SGD (`YDR387C`) embed chromosome information, which
+#' prevents `.id_number()` from extracting a value for `qmax`.
 #' @noRd
 .numeric_ordered <- function(ids) mean(!is.na(.id_number(ids))) > 0.9
 
 #' Strip pipeline-added decoration from an identifier
 #'
 #' Some pipelines paste the symbol onto the ID (`ENSG00000141510!TP53`,
-#' `ENSMMUG00000000001__CCNF`). `_PAR_Y` is a real Ensembl tag, not decoration.
+#' `ENSMMUG00000000001__CCNF`). Ensembl tags such as `_PAR_Y` are preserved.
 #' @noRd
 .normalize_id <- function(x) {
   x <- trimws(x)
-  # perl: these run on every id of every call, and TRE is about twice the cost
+  # remove pipeline suffixes introduced by !, | or __
   x <- sub("[!|].*$", "", x, perl = TRUE)
   sub("__.*$", "", x, perl = TRUE)
 }
 
 #' First non-missing of two vectors, element by element
 #'
-#' Not `ifelse()`: that takes its type and length from the test, so it returns
-#' `logical(0)` for empty input where the type of `x` is meant. Seeding with the
-#' fallback and overwriting the hits is type-stable by construction.
+#' Replace missing entries of `x` with corresponding entries of `y`, preserving
+#' the type of empty `x`.
 #' @noRd
 .coalesce <- function(x, y) {
   na <- is.na(x)

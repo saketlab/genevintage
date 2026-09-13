@@ -1,17 +1,12 @@
-# Cross-references to other identifier systems. Ensembl publishes one TSV per
-# species and release under pub/release-N/tsv/, so this needs no MySQL dump and
-# no biomaRt.
+# Cross-references from Ensembl TSV files under pub/release-N/tsv/.
 
-# Do not put the release in the pattern. Under Ensembl Genomes the file carries
-# that division's release number, so yeast at vertebrates 116 ships
-# Saccharomyces_cerevisiae.R64-1-1.63.entrez.tsv.gz.
+# match the database suffix because filenames use the division's release number
 .XREF_FILE <- "\\.%s\\.tsv\\.gz$"
 
 #' Stream one cross-reference TSV, keeping the gene-level pairs
 #'
-#' The file lists one row per transcript, so a gene with twelve transcripts
-#' appears twelve times. Deduplicating as the stream goes keeps memory
-#' proportional to the gene count.
+#' Deduplicate gene-level pairs from transcript rows while streaming to limit
+#' memory to distinct pairs.
 #'
 #' @param url A `.tsv.gz` cross-reference URL.
 #' @param db The `db_name` to keep, e.g. `"EntrezGene"`.
@@ -27,11 +22,12 @@ stream_xrefs <- function(url, db = "EntrezGene", chunk = 200000) {
     }
     f <- strsplit(x, "\t", fixed = TRUE)
     col <- function(i) vapply(f, function(z) if (length(z) >= i) z[i] else NA_character_, "")
-    keep <- col(5L) == db & !is.na(col(4L)) & nzchar(col(4L))
+    xref <- col(4L)
+    keep <- col(5L) == db & !is.na(xref) & nzchar(xref)
     if (!any(keep)) {
       return(character())
     }
-    pair <- paste(col(1L)[keep], col(4L)[keep], sep = "\t")
+    pair <- paste(col(1L)[keep], xref[keep], sep = "\t")
     pair <- pair[!duplicated(pair) & !pair %in% seen]
     seen <<- c(seen, pair)
     pair
@@ -55,8 +51,7 @@ stream_xrefs <- function(url, db = "EntrezGene", chunk = 200000) {
 #' keeps the gene-level pairs and caches them, so later calls are offline.
 #'
 #' @param species Species in any form [resolve_species()] accepts.
-#' @param release Ensembl release. Cross-references are published against
-#'   Ensembl releases, so a GENCODE release number is not one.
+#' @param release Ensembl release number for the cross-reference files.
 #' @param db Cross-reference database. `"entrez"` is the only one indexed.
 #' @param refresh Refetch and overwrite the cached copy.
 #' @return A data frame of `id` and `xref`, one row per distinct pair.
@@ -110,15 +105,12 @@ fetch_xrefs <- function(species, release, db = "entrez", refresh = FALSE) {
 #' detecting the species the way the rest of the package does. Cross-references
 #' are streamed once per species and release, then cached.
 #'
-#' Entrez is not a relabelling of Ensembl. A gene may carry several Entrez
-#' identifiers or none, so a row is a pair rather than a translation, and
-#' `entrez` is `NA` where Ensembl records no cross-reference. Roughly a third of
-#' human genes are in that position, mostly novel long non-coding RNAs.
+#' A gene may carry several Entrez identifiers or none. Each row is a pair;
+#' `entrez` is `NA` where Ensembl records no cross-reference.
 #'
 #' Cross-references are published against Ensembl releases. Identifiers dated to
 #' a GENCODE release are looked up in the newest indexed Ensembl release for
-#' that species, since a cross-reference is a relationship between stable
-#' identifiers rather than a vintage.
+#' that species to obtain cross-references between stable identifiers.
 #'
 #' @inheritParams mito_genes
 #' @param ids Gene identifiers, or gene names. Names need `species`, since a

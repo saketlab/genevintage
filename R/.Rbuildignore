@@ -7,6 +7,7 @@
 ^genevintage\.Rcheck$
 ^goals\.md$
 ^inst/extdata/parts
+^inst/extdata/symbol-index-parts
 ^pkgdown$
 ^tests/testthat/fixtures$
 ^tests/testthat/golden$
@@ -17,3 +18,4 @@
 ^\.Rproj\.user$
 ^doc$
 ^Meta$
+^\.claude$

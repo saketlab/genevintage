@@ -16,13 +16,21 @@
 #'   alongside the release when both are left `NULL`.
 #' @param source Annotation family: `"ensembl"`, or `"gencode"` /
 #'   `"gencode_all"` for GENCODE's primary and scaffold-inclusive gene sets.
-#'   Detected alongside the release. Human and mouse counts are usually produced
-#'   against GENCODE, whose gene set is the smaller of the two.
-#' @param unique Passed to [gene_names()].
+#'   Detected alongside the release.
+#' @param mapping Skip detection and use this `id`/`name` table, as accepted
+#'   by [gene_names()].
+#' @param unique Passed to [gene_names()]. Defaults to `TRUE` when `ids` is a
+#'   matrix, sparse `Matrix` or data frame, and to `FALSE` otherwise.
 #' @param quiet Suppress the message reporting what was detected.
+#' @param row_ids When `ids` is a matrix, sparse `Matrix` or data frame,
+#'   overrides which identifiers to detect and map. Defaults to `rownames(ids)`;
+#'   set this when `ids` has none.
 #'
-#' @return A character vector the same length as `ids`, carrying `mapped`,
-#'   `species`, `source`, `release` and `assembly` attributes.
+#' @return If `ids` is a plain vector: a character vector the same length as
+#'   `ids`, carrying `mapped`, `species`, `source`, `release` and `assembly`
+#'   attributes. If `ids` is a matrix, sparse `Matrix` or data frame: the same
+#'   object with only its row names replaced by gene names; dimensions, row
+#'   order and other attributes are preserved.
 #'
 #' @seealso [detect_species()], [detect_release()], [gene_names()].
 #' @export
@@ -30,10 +38,31 @@
 #' \dontrun{
 #' ids <- c("ENSG00000141510", "ENSG00000284733", "ENSG00000012048")
 #' geneid2name(ids)
+#'
+#' m <- matrix(1:6, nrow = 3, dimnames = list(ids, c("s1", "s2")))
+#' geneid2name(m)
+#' #>                 s1 s2
+#' #> TP53             1  4
+#' #> ENSG00000284733  2  5
+#' #> BRCA1            3  6
 #' }
 geneid2name <- function(ids, species = NULL, release = NULL, assembly = NULL,
-                        source = NULL, unique = FALSE, quiet = FALSE) {
+                        source = NULL, mapping = NULL, unique, quiet = FALSE,
+                        row_ids = NULL) {
+  if (!is.null(dim(ids))) {
+    if (missing(unique)) unique <- TRUE
+    return(.rename_rows(ids, row_ids, function(rid) {
+      geneid2name(rid,
+        species = species, release = release, assembly = assembly,
+        source = source, mapping = mapping, unique = unique, quiet = quiet
+      )
+    }))
+  }
+  if (missing(unique)) unique <- FALSE
   ids <- .as_ids(ids)
+  if (!is.null(mapping)) {
+    return(gene_names(ids, mapping, unique = unique, warn = !quiet))
+  }
   if (!is.null(species)) species <- resolve_species(species)
   if (is.null(species)) {
     cand <- detect_species(ids)
@@ -44,8 +73,7 @@ geneid2name <- function(ids, species = NULL, release = NULL, assembly = NULL,
         call. = FALSE
       )
     }
-    # a second species with a real share means a merged set
-    # dog breeds all use ENSCAFG; report the tie rather than a determination
+    # report tied species sharing an identifier prefix, such as dog breeds
     tied <- sum(cand$frac >= cand$frac[1] - 1e-9)
     if (tied > 1) {
       message(sprintf(

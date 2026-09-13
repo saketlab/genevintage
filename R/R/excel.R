@@ -8,13 +8,13 @@ EXCEL_MONTHS <- list(
   nov = c("NOV"), dec = c("DEC", "DELEC")
 )
 
-# no inner groups (each shifts every capture index); longest alternative first, or "mar" wins over "march"
+# inner groups shift capture indices; longest alternatives match before their prefixes
 .MONTH_RX <- paste("jan", "feb", "march|mar", "apr", "may", "june|jun",
   "july|jul", "aug", "september|sept|sep", "oct", "nov", "dec",
   sep = "|"
 )
 
-# Excel truncates sci notation to ~3 significant digits; unrecoverable, no candidates generated
+# recognise scientific notation for numeric-symbol candidate generation
 .SCI_RX <- "^([0-9])\\.([0-9]+)[Ee]\\+?([0-9]+)$"
 
 # leading apostrophe (forced-text) and CSV quoting don't belong to the symbol
@@ -27,7 +27,7 @@ EXCEL_MONTHS <- list(
 # Separators differ by locale: 1-Mar, 1/Mar, 01.Sep, "Sep 15".
 .SEP <- "[-/. ]"
 
-# recognition + parsing grammar in one table, stated once rather than twice
+# each damage rule pairs a recognition pattern with a month/day parser
 .mon <- function(s) match(substr(tolower(s), 1, 3), tolower(month.abb))
 .dmy <- function(p) list(c(.mon(p[3]), as.integer(p[2])))
 
@@ -61,7 +61,7 @@ DAMAGE <- list(
     kind = "date_serial", rx = "^([0-9]{5})$",
     md = function(p) {
       n <- as.integer(p[2])
-      # Excel's phantom Feb 29 1900 makes every serial <=60 off by one; not a plausible symbol
+      # skip serials <=60, which precede Excel's phantom February 29, 1900 or denote it
       if (n <= 60L) {
         return(list())
       }
@@ -72,7 +72,7 @@ DAMAGE <- list(
   list(kind = "sci", rx = .SCI_RX, md = function(p) list())
 )
 
-# cheap gate: no separator/digits/exponent rules out every shape (almost every row name)
+# prefilter for separators, numeric serials and exponents before parsing damage
 .MAYBE_RX <- "[-/. ]|^[0-9]+$|[0-9][Ee]"
 
 .excel_kind <- function(x) {
@@ -122,7 +122,7 @@ DAMAGE <- list(
       return(c(stem, paste0(stem, "Rik")))
     }
     unlist(lapply(dates[[i]], function(md) {
-      # a day of 0 or 32 is not a date, so it is not this kind of damage either
+      # candidates require months 1 through 12 and days 1 through 31
       if (anyNA(md) || md[1] < 1 || md[1] > 12 || md[2] < 1 || md[2] > 31) {
         return(character())
       }
@@ -134,58 +134,72 @@ DAMAGE <- list(
 #' Repair gene symbols a spreadsheet has converted to dates or numbers
 #'
 #' Excel silently reinterprets some gene symbols: `SEPT9` becomes `9-Sep`,
-#' `MARCH1` becomes `1-Mar`, `2310009E13` becomes `2.31E+13`. The damage is
-#' widespread in published supplementary files (Ziemann et al. 2016;
-#' Abeysooriya et al. 2021) and is not recoverable from the file alone, because
-#' several symbols can produce the same date.
-#'
-#' The annotation resolves it. Every symbol that could have produced the token
-#' is generated, and only those the caller's own species and release actually
-#' contain are offered, so the answer is the symbol their matrix should hold.
-#'
-#' That matters more than it sounds: HGNC renamed the worst offenders in 2020,
-#' so `9-Sep` is `SEPT9` against Ensembl release 95 and `SEPTIN9` against
-#' release 116. A fixed lookup table cannot be right for both.
+#' `MARCH1` becomes `1-Mar`, `2310009E13` becomes `2.31E+13`. Several symbols
+#' can produce the same token, so candidates are checked against the caller's
+#' species and release. For example, `9-Sep` resolves to `SEPT9` against
+#' Ensembl release 95 and `SEPTIN9` against release 116.
 #'
 #' Tokens that are not damaged are returned unchanged, so the result drops
 #' straight back into `rownames()`. A token with no surviving candidate, or with
 #' more than one, is also returned unchanged and reported.
 #'
-#' A damaged token carries no species of its own, so pass `mapping`, or both
-#' `species` and `release`, whenever `x` contains one. Choosing the release
-#' explicitly also decides historical names such as `SEPT9` versus `SEPTIN9`;
-#' left to detect, a symbol-only vector would silently default to the newest
-#' release instead of refusing to guess.
+#' Pass `mapping`, or both `species` and `release`, whenever `x` contains a
+#' damaged token so candidates can be checked against a specific annotation.
+#'
+#' For a matrix, sparse `Matrix` or data frame, only row names are replaced;
+#' dimensions, row order and other attributes are preserved. Call
+#' `correct_genenames()` on `rownames(x)` to obtain the `corrected`, `ambiguous`
+#' and `unresolved` attributes.
 #'
 #' @inheritParams mito_genes
-#' @param x Gene names, some of which a spreadsheet may have converted.
+#' @param x Gene names, some of which a spreadsheet may have converted, or a
+#'   matrix, sparse `Matrix` or data frame with such names as its row names.
 #' @param unique Make the result unique by appending the damaged token to a
 #'   repaired name that collides with another (as [gene_names()] does), then
-#'   falling back to [make.unique()] for any collision that remains. Off by
-#'   default, since it changes names.
-#' @return A character vector the same length and order as `x`, carrying a
-#'   `corrected` attribute (logical), an `ambiguous` attribute naming tokens
-#'   that matched more than one symbol, and an `unresolved` attribute naming
-#'   damaged tokens no symbol in this annotation produces.
+#'   falling back to [make.unique()] for any collision that remains. Defaults
+#'   to `TRUE` when `x` is a matrix, sparse `Matrix` or data frame, and to
+#'   `FALSE` otherwise.
+#' @param row_ids When `x` is a matrix, sparse `Matrix` or data frame,
+#'   overrides which row identifiers to correct. Defaults to `rownames(x)`;
+#'   set this when `x` has none.
+#' @return If `x` is a plain vector: a character vector the same length and
+#'   order as `x`, carrying a `corrected` attribute (logical), an `ambiguous`
+#'   attribute naming tokens that matched more than one symbol, and an
+#'   `unresolved` attribute naming damaged tokens no symbol in this annotation
+#'   produces. If `x` is a matrix, sparse `Matrix` or data frame: the same
+#'   object with corrected row names and none of those attributes.
 #' @references
 #' Ziemann M, Eren Y, El-Osta A (2016). Gene name errors are widespread in the
 #' scientific literature. *Genome Biology* 17:177.
 #'
 #' Abeysooriya M, Soria M, Kasu MS, Ziemann M (2021). Gene name errors: Lessons
 #' not learned. *PLOS Computational Biology* 17(7):e1008984.
-#' @seealso [gene_names()], [gene_ids()].
+#' @seealso [gene_names()], [gene_ids()], [geneid2name()].
 #' @export
 #' @examples
 #' \dontrun{
-#' # against a 2019 vintage these come back as SEPT9 and MARCH1
-#' correct_names(c("9-Sep", "1-Mar", "TP53"), species = "human", release = 95)
+#' # release 95 resolves these as SEPT9 and MARCH1
+#' correct_genenames(c("9-Sep", "1-Mar", "TP53"), species = "human", release = 95)
 #'
-#' # against a current one, as SEPTIN9 and MARCHF1
-#' correct_names(c("9-Sep", "1-Mar", "TP53"), species = "human", release = 116)
+#' # release 116 resolves these as SEPTIN9 and MARCHF1
+#' correct_genenames(c("9-Sep", "1-Mar", "TP53"), species = "human", release = 116)
+#'
+#' m <- matrix(1:4, nrow = 2, dimnames = list(c("9-Sep", "TP53"), c("s1", "s2")))
+#' correct_genenames(m, species = "human", release = 116)
 #' }
-correct_names <- function(x, species = NULL, release = NULL, assembly = NULL,
-                          source = NULL, mapping = NULL, unique = FALSE,
-                          quiet = FALSE) {
+correct_genenames <- function(x, species = NULL, release = NULL, assembly = NULL,
+                              source = NULL, mapping = NULL, unique, quiet = FALSE,
+                              row_ids = NULL) {
+  if (!is.null(dim(x))) {
+    if (missing(unique)) unique <- TRUE
+    return(.rename_rows(x, row_ids, function(rid) {
+      correct_genenames(rid,
+        species = species, release = release, assembly = assembly,
+        source = source, mapping = mapping, unique = unique, quiet = quiet
+      )
+    }))
+  }
+  if (missing(unique)) unique <- FALSE
   x <- .as_ids(x)
   out <- x
   corrected <- rep(FALSE, length(x))
@@ -249,47 +263,4 @@ correct_names <- function(x, species = NULL, release = NULL, assembly = NULL,
   attr(out, "ambiguous") <- ambiguous
   attr(out, "unresolved") <- unresolved
   out
-}
-
-#' Repair Excel-damaged row identifiers in place
-#'
-#' [correct_names()] applied to a matrix's row names, and put back on the same
-#' object. Dimensions never change and rows never move: a token with no
-#' surviving candidate, or with more than one, keeps its original value.
-#'
-#' Works on anything with `rownames()`: a base matrix, a sparse `Matrix` or a
-#' data frame, because only the dimnames are touched.
-#'
-#' @param x A matrix or data frame with (possibly Excel-damaged) gene symbols
-#'   as row names.
-#' @param ids Row identifiers. Defaults to `rownames(x)`.
-#' @param unique Disambiguate names that would otherwise collide, by appending
-#'   the damaged token. On by default: duplicate row names are legal in a
-#'   matrix but break almost everything downstream.
-#' @inheritParams correct_names
-#'
-#' @return `x` with new row names. Nothing else about the object changes: no
-#'   extra attributes, so a sparse `Matrix` stays a valid S4 object through
-#'   subsetting, binding and arithmetic. Keep `rownames(x)` yourself if you
-#'   need to see which tokens were ambiguous or unresolved; call
-#'   [correct_names()] directly for that.
-#'
-#' @seealso [correct_names()] for the vector form and its attributes,
-#'   [rename_rows()] for the ID-to-name case.
-#' @export
-#' @examples
-#' \dontrun{
-#' m <- matrix(1:4, nrow = 2, dimnames = list(c("9-Sep", "TP53"), c("s1", "s2")))
-#' correct_rows(m, species = "human", release = 116)
-#' }
-correct_rows <- function(x, ids = rownames(x), species = NULL, release = NULL,
-                         assembly = NULL, source = NULL, mapping = NULL,
-                         unique = TRUE, quiet = FALSE) {
-  .check_row_ids(x, ids)
-  nm <- correct_names(ids,
-    species = species, release = release, assembly = assembly,
-    source = source, mapping = mapping, unique = unique, quiet = quiet
-  )
-  rownames(x) <- as.vector(nm)
-  x
 }

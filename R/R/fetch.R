@@ -1,12 +1,9 @@
-# Mapping tables, streamed from the Ensembl GTF. No disk, no biomaRt.
+# Mapping tables streamed from Ensembl GTFs and cached locally.
 
-# read once per session; rename_rows() over many matrices would re-inflate the
-# same 60k-row table each call
+# retain mappings in memory for repeated calls within a session
 .mapping_memo <- new.env(parent = emptyenv())
 
-# memory, then disk, then the network.
-# a half-written file survives a crash, so trust a cached value only when it
-# carries the columns it should; discarding is safe, nothing here is unrebuildable
+# check memory, then disk; discard disk entries that lack the required columns
 .cache_get <- function(f, memo, cols) {
   hit <- memo[[f]]
   if (!is.null(hit)) {
@@ -28,18 +25,16 @@
 .cache_put <- function(f, memo, x) {
   dir.create(dirname(f), showWarnings = FALSE, recursive = TRUE)
   tmp <- paste0(f, ".tmp")
-  saveRDS(x, tmp) # gzip: 10x faster to write, 200KB larger
+  saveRDS(x, tmp)
   file.rename(tmp, f)
   memo[[f]] <- x
   x
 }
 
-# not created here; .cache_put() makes it, so a query never leaves a directory
-# behind in the user's filespace
+# .cache_put() creates the directory when saving a result
 .cache_dir <- function() tools::R_user_dir("genevintage", "cache")
 
-# Ensembl's FTP host refuses the occasional connection under load; the failure
-# is not sticky
+# retry failed calls with an increasing wait between attempts
 .attempt <- function(f, tries = 3L, wait = 2) {
   for (i in seq_len(tries)) {
     v <- try(f(), silent = TRUE)
@@ -66,7 +61,7 @@
     if (!is.null(cache)) {
       return(cache)
     }
-    # short leash; a blocked port should cost seconds, not a timeout
+    # cap the protocol probe timeout at 8 seconds
     old <- options(timeout = 8)
     on.exit(options(old), add = TRUE)
     root <- sub("(^ftp://[^/]+/[^/]+/).*$", "\\1", .as_ftp(url))
@@ -97,9 +92,8 @@
 
 #' Do something with a URL, over whichever protocol answers
 #'
-#' Only the last candidate is retried: a protocol that is blocked fails on the
-#' first attempt and there is nothing to wait for, while a transient refusal on
-#' the one that does work is worth a second and third go.
+#' Try each protocol once; allow three attempts for the final candidate to
+#' recover from transient failures.
 #' @noRd
 .by_protocol <- function(url, f) {
   cand <- .url_candidates(url)
@@ -116,8 +110,7 @@
 
 #' Entry names from a directory index, whichever protocol served it
 #'
-#' HTTPS returns an HTML index and FTP returns `ls -l` lines, so the two are
-#' normalised to bare names here rather than every caller learning both shapes.
+#' Normalise HTTPS HTML indexes and FTP `ls -l` listings to bare names.
 #' @noRd
 .listing_names <- function(x) {
   x <- x[nzchar(trimws(x))]
@@ -125,13 +118,13 @@
   if (any(grepl("href=", x, fixed = TRUE))) {
     n <- unlist(regmatches(x, gregexpr('(?<=href=")[^"?][^"]*', x, perl = TRUE)))
   } else if (any(html)) {
-    # markup but no links: an error page. raw HTML is not a filename.
+    # treat linkless markup as an error page and return no entries
     return(character())
   } else {
     # ls -l: nine fields, the ninth the name, which may contain spaces
     perms <- "^[-dlbcps][-rwxstST]{9}[.+]?"
     lsl <- grepl(paste0(perms, "\\s+(\\S+\\s+){7}\\S"), x)
-    # in an NLST listing a permissions string means malformed, not a filename
+    # discard malformed NLST entries starting with a permissions string
     n <- if (any(lsl)) sub("^(\\S+\\s+){8}", "", x[lsl]) else x[!grepl(perms, x)]
     # symlink lines end "name -> target"
     n <- sub(" -> .*$", "", n)
@@ -148,8 +141,7 @@
   .listing_names(idx)
 }
 
-# keep only the lines the filter wants; peak memory tracks what is kept, not
-# the size of the file
+# filter each chunk before retaining it so memory tracks the selected lines
 .stream_filter <- function(url, keep, chunk) {
   old <- options(timeout = max(3600, getOption("timeout")))
   on.exit(options(old), add = TRUE)
@@ -174,14 +166,14 @@
 
 #' Pull gene records out of a GTF without ever writing it to disk
 #'
-#' Decompresses the HTTP stream in chunks and keeps only `gene` lines, so peak
-#' memory tracks the gene count rather than the size of the file.
+#' Decompresses the stream in chunks and retains `gene` lines. If there are
+#' none, reads the first record per gene from the remaining feature lines.
 #'
 #' @param url A `.gtf.gz` URL.
 #' @param chunk Lines to decompress per iteration.
 #' @return A data frame of `id`, `name`, `chr`, `start`, `end`, `strand`,
-#'   `span`, `id_version` and `biotype`. `span` is the genomic extent, not the
-#'   exonic length TPM and FPKM require.
+#'   `span`, `id_version` and `biotype`. `span` is the genomic extent from
+#'   first to last base; TPM and FPKM require exonic length.
 #' @examples
 #' \dontrun{
 #' # any Ensembl-shaped GTF; nothing is written to disk
@@ -193,21 +185,20 @@
 #' }
 #' @export
 stream_gtf <- function(url, chunk = 100000) {
-  # fixed = TRUE; the regex form rescans every line for the same result
+  # select gene lines by their tab-delimited feature field
   k <- .stream_filter(
     url, function(x) grep("\tgene\t", x, value = TRUE, fixed = TRUE),
     chunk
   )
   if (!length(k)) {
-    # releases 50-74 have no gene rows. exon and CDS carry the same attributes,
-    # so take the first line per gene, deduplicating as the stream goes.
+    # feature lines carry gene attributes; retain the first line per gene
     seen <- character()
     k <- .stream_filter(url, function(x) {
       x <- x[!startsWith(x, "#")]
       if (!length(x)) {
         return(x)
       }
-      # lazy and PCRE; the greedy TRE form backtracks from the end of every line
+      # stop at the first gene_id attribute
       id <- sub('.*?gene_id "([^"]*)".*', "\\1", x, perl = TRUE)
       new <- !duplicated(id) & !(id %in% seen)
       seen <<- c(seen, id[new])
@@ -218,7 +209,7 @@ stream_gtf <- function(url, chunk = 100000) {
 
   # anchor on the separator; unanchored ".*gene_id" also matches havana_gene_id
   attr_of <- function(key) {
-    # lookbehind, not a leading anchor; the first attribute follows a tab
+    # lookbehind accepts the first attribute after a tab
     rx <- sprintf('(?<![A-Za-z_])%s "([^"]*)"', key)
     m <- regexpr(rx, k, perl = TRUE)
     out <- rep(NA_character_, length(k))
@@ -253,7 +244,7 @@ stream_gtf <- function(url, chunk = 100000) {
   if (all(is.na(bio))) bio <- attr_of("gene_type")
   data.frame(
     id = ids,
-    name = attr_of("gene_name"), # NA for ~45% of human genes
+    name = attr_of("gene_name"),
     chr = chr,
     start = start,
     end = end,
@@ -269,10 +260,8 @@ stream_gtf <- function(url, chunk = 100000) {
 
 #' Where GENCODE keeps one release's GTF
 #'
-#' GENCODE has no `release-NN/gtf/<species>/` tree to list: the path is
-#' predictable, the species are only human and mouse, and each release ships two
-#' gene sets: the primary assembly, and the scaffold- and patch-inclusive one.
-#' Shared with `data-raw/build_gencode.R` so the layout is stated once.
+#' Build the human or mouse URL for the primary assembly or the scaffold- and
+#' patch-inclusive gene set.
 #' @noRd
 .gencode_url <- function(root, species, release, source = "gencode") {
   dir <- c(homo_sapiens = "Gencode_human", mus_musculus = "Gencode_mouse")[species]
@@ -289,8 +278,7 @@ stream_gtf <- function(url, chunk = 100000) {
 #' Mapping table for one species and Ensembl release
 #'
 #' Streamed from the Ensembl GTF on first use, then cached, so later calls are
-#' offline. The GTF is the only source that carries `gene_version`, and unlike
-#' the biomaRt archives it exists for every release.
+#' offline. Gene versions are read from GTF attributes or identifier suffixes.
 #'
 #' @param species Species, in any form [resolve_species()] accepts:
 #'   `"homo_sapiens"`, `"Human"` or `"human"`.
@@ -306,8 +294,8 @@ stream_gtf <- function(url, chunk = 100000) {
 #'
 #' @return A data frame of `id`, `name`, `chr`, `start`, `end`, `strand`,
 #'   `span`, `id_version` and `biotype`, suitable as the `mapping` argument of
-#'   [gene_names()]. `span` is the genomic extent, not the exonic length TPM and
-#'   FPKM require. See [stream_gtf()].
+#'   [gene_names()]. `span` is the genomic extent from first to last base;
+#'   TPM and FPKM require exonic length. See [stream_gtf()].
 #' @examples
 #' \dontrun{
 #' m <- fetch_mapping("yeast", release = 116)
@@ -337,8 +325,7 @@ fetch_mapping <- function(species, release, assembly = NULL, source = NULL,
     )
   }
   if (nrow(row) > 1L) {
-    # GENCODE's two gene sets share a release and assembly; naming the
-    # assemblies alone would read "2 assemblies (38, 38)"
+    # report source ambiguity before assembly ambiguity
     if (length(unique(row$source)) > 1L) {
       stop(sprintf(
         "%s release %s exists in %d annotation sources (%s); pass `source`. detect_release(ids, species = \"%s\") reports which one the ids came from.",
@@ -359,7 +346,7 @@ fetch_mapping <- function(species, release, assembly = NULL, source = NULL,
   f <- .cache_path("mapping", row$source, species, row$assembly, rel)
   if (!refresh) {
     hit <- .cache_get(f, .mapping_memo, c("id", "name", "chr", "biotype", "span"))
-    if (!is.null(hit) && all(is.na(hit$biotype))) hit <- NULL # pre-gene_type cache
+    if (!is.null(hit) && all(is.na(hit$biotype))) hit <- NULL # refetch mappings with entirely missing biotypes
     if (!is.null(hit)) {
       return(hit)
     }
@@ -367,14 +354,14 @@ fetch_mapping <- function(species, release, assembly = NULL, source = NULL,
 
   if ("annotation_url" %in% names(row) && !is.na(row$annotation_url) &&
     nzchar(row$annotation_url)) {
-    # Old archives use filenames such as gencode_v4.annotation.GRCh37.gtf.gz.
+    # use the indexed URL for archive-specific filenames
     url <- row$annotation_url
   } else if (startsWith(row$source, "gencode")) {
     url <- .gencode_url(row$annotation_root, species, rel, row$source)
   } else {
     dir_url <- sprintf("%s/release-%s/gtf/%s/", row$annotation_root, rel, species)
     idx <- .listing(dir_url, paste("cannot reach", dir_url))
-    # the plain <Species>.<assembly>.<release>.gtf.gz, not abinitio/chr/patch
+    # select <Species>.<assembly>.<release>.gtf.gz and exclude abinitio/chr/patch files
     cand <- grep("\\.gtf\\.gz$", idx, value = TRUE)
     cand <- grep("abinitio|\\.chr\\.|patch", cand, value = TRUE, invert = TRUE)
     if (!length(cand)) stop("no GTF found for ", species, " release ", rel, call. = FALSE)

@@ -67,9 +67,7 @@ reference:
   - gene_names
   - gene_ids
   - annotate_genes
-  - correct_names
-  - correct_rows
-  - rename_rows
+  - correct_genenames
 
 - title: Dating
   desc: >

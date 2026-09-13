@@ -1,13 +1,4 @@
-# Cached mappings and homologies live under tools::R_user_dir(). CRAN's policy
-# for that location asks that the contents be actively managed, which needs a
-# way to see and remove them.
-
-# One place knows the cache layout, and both writers go through it.
-#
-# "-" separates fields: no source, species, assembly or release contains one,
-# while "_" appears in two of them (homo_sapiens, gencode_all) and species run
-# to three tokens. Separating on a character the fields can contain forced the
-# reader to carry the source vocabulary and a field count.
+# Cache filenames use "-" between fields so names containing "_" stay intact.
 #
 #   mapping-<source>-<species>-<assembly>-<release>.rds
 #   orthologs-<species>-<to>-<release>-<homology>.rds
@@ -22,8 +13,8 @@
   file.path(.cache_dir(), paste0(paste(c(kind, ...), collapse = "-"), ".rds"))
 }
 
-# .tmp marks a write that did not finish. anything else is not ours and is
-# dropped, so a file somebody left here is never reported nor deleted.
+# .tmp marks an interrupted write. Only recognised kinds with the expected
+# field count are listed and eligible for removal.
 .cache_parts <- function(f) {
   p <- strsplit(sub("\\.rds(\\.tmp)?$", "", basename(f)), "-", fixed = TRUE)
   kind <- vapply(p, function(x) x[1L], "")
@@ -56,9 +47,8 @@
 #' The location follows R's own convention and can be moved by setting the
 #' `R_USER_CACHE_DIR` environment variable before the package is used.
 #'
-#' An interrupted download leaves a `.rds.tmp` file behind. Those are listed as
-#' `partial` and removed like anything else, so nothing the package writes is
-#' invisible to the user or beyond their reach.
+#' Interrupted writes leave `.rds.tmp` files, listed as `partial` and eligible
+#' for removal.
 #'
 #' @param clear Remove cached files. `TRUE` removes all of them; a number
 #'   removes those not used in that many days.
@@ -88,7 +78,7 @@ gene_cache <- function(clear = FALSE) {
     return(out)
   }
 
-  # "everything" is just a threshold no file can be younger than
+  # -Inf makes every finite file age eligible for removal
   days <- if (isTRUE(clear)) {
     -Inf
   } else if (is.numeric(clear)) {

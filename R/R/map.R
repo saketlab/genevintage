@@ -1,18 +1,15 @@
 # ID -> gene name, keeping the ID when no name exists.
 
-#' A name that is really a name
+#' Whether a name is present and differs from the identifier
 #'
-#' References signal "no symbol" by repeating the identifier, not by leaving the
-#' field blank, as Ensembl and CellRanger both do. Blanks and `NA` count too.
+#' Repeated identifiers, blanks and `NA` are treated as missing symbols.
 #' @noRd
 .is_name <- function(name, id) !is.na(name) & nzchar(name) & name != id
 
 #' The collision warning, classed so a caller can catch just this one
 #'
-#' A caller who always disambiguates downstream (e.g. with `make.unique()`)
-#' needs to muffle only this warning, not the unrelated ones `gene_names()`
-#' and `geneid2name()` also raise. Matching on class beats matching on this
-#' message's text, which can be reworded without notice.
+#' The `genevintage_duplicate_names` class lets callers muffle collision
+#' warnings when they disambiguate names downstream.
 #' @noRd
 .duplicate_names_condition <- function(n) {
   warningCondition(
@@ -23,14 +20,12 @@
 
 #' Suffix colliding names with a token, then guarantee uniqueness
 #'
-#' Shared by [gene_names()] and [correct_names()]: only an entry that is both
-#' colliding and genuinely resolved (`ok`) gets the `tag` suffix, or two
-#' untouched duplicates (e.g. two unmapped ids) would self-suffix into
-#' "tok_tok"; any remaining collision still falls to [make.unique()].
+#' Only resolved entries (`ok`) in a collision receive the `tag` suffix.
+#' [make.unique()] handles any remaining collisions, including unmapped IDs.
 #' @noRd
 .suffix_collisions <- function(out, ok, tag) {
-  coll <- duplicated(out) | duplicated(out, fromLast = TRUE)
-  out[coll & ok] <- paste0(out[coll & ok], "_", tag[coll & ok])
+  coll <- (duplicated(out) | duplicated(out, fromLast = TRUE)) & ok
+  out[coll] <- paste0(out[coll], "_", tag[coll])
   make.unique(out, sep = "_")
 }
 

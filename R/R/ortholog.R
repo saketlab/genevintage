@@ -3,8 +3,7 @@
 
 .ortholog_memo <- new.env(parent = emptyenv())
 
-# a release can carry two assemblies, so pick one rather than letting
-# fetch_mapping() refuse
+# select the primary assembly when a release carries multiple assemblies
 .mapping_for <- function(species, release) {
   row <- .primary_row(species, release)
   fetch_mapping(species, release,
@@ -24,18 +23,18 @@
   lut <- m[.is_name(m$name, m$id), c("id", "name"), drop = FALSE]
   lut$id <- .bare(lut$id)
 
-  # split only the rows a name in hand actually hits; splitting the whole lookup
-  # costs the same for two names as for two thousand
+  # split only matching rows to limit lookup work to the requested names
   keep <- lut$name %in% x
-  hits <- split(lut$id[keep], factor(lut$name[keep], levels = unique(lut$name[keep])))[x]
-  # no two human symbols differ only by case, so a second pass adds no ambiguity
+  nm <- lut$name[keep]
+  hits <- split(lut$id[keep], factor(nm, levels = unique(nm)))[x]
+  # try case-insensitive matching for symbols with no exact match
   miss <- vapply(hits, is.null, logical(1))
   if (any(miss)) {
     lx <- tolower(x[miss])
-    lk <- tolower(lut$name) %in% lx
-    lo <- split(lut$id[lk], factor(tolower(lut$name[lk]),
-      levels = unique(tolower(lut$name[lk]))
-    ))
+    lname <- tolower(lut$name)
+    lk <- lname %in% lx
+    lower <- lname[lk]
+    lo <- split(lut$id[lk], factor(lower, levels = unique(lower)))
     hits[miss] <- lo[lx]
   }
   n <- lengths(hits)
@@ -55,8 +54,7 @@
   unlist(hits, use.names = FALSE)
 }
 
-# a zero-row result needs the columns a populated one has, or $ortholog_name
-# breaks only when nothing matched, the case least likely to be tested
+# retain the homology columns in empty results so callers can access them
 .empty_homology <- function(names = FALSE) {
   out <- data.frame(
     id = character(), name = character(),
@@ -69,7 +67,7 @@
   out
 }
 
-# column order derived from that shape, not restated
+# derive column order from the empty result schema
 .HOM_COLS <- names(.empty_homology(TRUE))
 
 # read from the other species' file, a one2many becomes a many2one
@@ -81,18 +79,13 @@
 
 #' Stream one species' orthologs against one other species
 #'
-#' Compara publishes one homology file per species covering every other species
-#' and every paralog, so almost all of it is other
-#' species' business, so the target species is filtered out of the stream in
-#' chunks and only that pair is kept, the way [stream_gtf()] keeps only gene
-#' lines. Peak memory stays small and nothing reaches disk but the result.
+#' Filters the Compara stream in chunks to retain orthologs for the requested
+#' target species, limiting memory to the selected pair.
 #'
 #' @param url A Compara `homologies.tsv.gz` URL.
 #' @param to Ensembl species name to keep, e.g. `"mus_musculus"`.
-#' @param swap Return the pair the other way round. Compara's per-species files
-#'   are not symmetric: human's omits mouse while mouse's carries human, so
-#'   the pair sometimes has to be read from the other species' file and turned
-#'   around. Orthology is symmetric, so this loses nothing.
+#' @param swap Reverse the pair when reading it from the target species' file,
+#'   including the direction of one-to-many relationships.
 #' @param chunk Lines to decompress per iteration.
 #' @return A data frame of `id`, `ortholog_id`, `homology_type`, `identity`,
 #'   `ortholog_identity`, `high_confidence`.
@@ -116,8 +109,7 @@ stream_homologies <- function(url, to, swap = FALSE, chunk = 200000) {
   tag <- paste0("\t", to, "\t")
   j <- NULL
   nc <- NULL
-  # the header is the first line of the first chunk, so the filter takes it off
-  # itself and the shared loop needs no parameter for it
+  # read and remove the header from the first chunk
   k <- .stream_filter(url, function(x) {
     if (is.null(j)) {
       cols <- strsplit(x[1], "\t", fixed = TRUE)[[1]]
@@ -138,7 +130,7 @@ stream_homologies <- function(url, to, swap = FALSE, chunk = 200000) {
     return(.empty_homology())
   }
 
-  # matrix(unlist(...)) keeps no list intermediate at peak
+  # reshape tab-separated fields into rows
   f <- matrix(unlist(strsplit(k, "\t", fixed = TRUE), use.names = FALSE),
     ncol = nc, byrow = TRUE
   )
@@ -161,8 +153,7 @@ stream_homologies <- function(url, to, swap = FALSE, chunk = 200000) {
   out[startsWith(out$homology_type, "ortholog"), , drop = FALSE]
 }
 
-# human 112 ships GRCh37 and GRCh38; Compara uses the primary one, the row that
-# is neither relocated nor frozen
+# prefer an Ensembl row with a missing frozen_release value for Compara
 .primary_row <- function(species, release) {
   fp <- .fp()
   row <- fp[fp$species == species & fp$release == as.character(release) &
@@ -175,11 +166,8 @@ stream_homologies <- function(url, to, swap = FALSE, chunk = 200000) {
 
 # Which file holds one pair
 #
-# Compara's per-species files are not symmetric: at r116 the human file omits
-# mus_musculus, which sits in the murinae collection, while the mouse file lists
-# homo_sapiens. Try every collection for the source, then every one for the
-# target with the pair swapped; orthology is symmetric, so it is the same
-# relationship, and the only way to reach a pair Compara records once.
+# try source collections, then target collections with the pair reversed,
+# because Compara can record a pair in either species' files
 .collections <- function(root, release, kind, species) {
   dir_url <- sprintf(
     "%s/release-%s/tsv/ensembl-compara/homologies/%s/",
@@ -203,8 +191,7 @@ stream_homologies <- function(url, to, swap = FALSE, chunk = 200000) {
 }
 
 .homologies_for_pair <- function(root, release, kind, species, to) {
-  # neither side's absence is fatal alone; a species with no directory of its
-  # own may still appear in its partner's file
+  # a species may appear in its partner's file even when its own directory is absent
   err <- character()
   side <- function(sp, swap) {
     cs <- tryCatch(.collections(root, release, kind, sp),
@@ -229,19 +216,16 @@ stream_homologies <- function(url, to, swap = FALSE, chunk = 200000) {
   if (!is.null(m)) {
     return(m)
   }
-  # only when neither species has a homology file is there nothing to report
+  # propagate the source error if both collection lookups fail
   if (length(err) == 2L) stop(err[1], call. = FALSE)
-  # two species can share no orthologs of this kind, so an empty result is a
-  # real answer; return one without re-streaming a
-  # hundred megabytes to arrive at it
+  # successful lookups with no matching pair return an empty homology table
   .empty_homology()
 }
 
 #' Species Compara publishes homologies for
 #'
-#' Not every indexed species has ortholog data: at release 116 Compara covers
-#' 223 of Ensembl's vertebrates, and each division publishes its own set. Use
-#' this to check a pair before paying for a stream.
+#' Lists the species with Compara files for a release and division so callers
+#' can check availability before streaming a pair.
 #'
 #' @param release Ensembl release number. Under Ensembl Genomes, that division's
 #'   own release number.
@@ -305,8 +289,7 @@ fetch_orthologs <- function(species, to, release, kind = c("protein", "ncrna"),
   if (!nrow(trow)) {
     stop(sprintf("'%s' is not a species in the index.", to), call. = FALSE)
   }
-  # each division runs its own Compara, so this is no pair rather than a
-  # missing one
+  # require both species to belong to the same division's Compara
   if (!identical(row$division, trow$division[1])) {
     stop(sprintf(
       "%s (%s) and %s (%s) are in different Ensembl divisions; Compara does not relate them.",
@@ -322,8 +305,7 @@ fetch_orthologs <- function(species, to, release, kind = c("protein", "ncrna"),
     }
   }
 
-  # Compara belongs to the division, not one assembly's annotation; GRCh37 has
-  # no homologies of its own, hence root and not annotation_root
+  # use the division's root to locate Compara homologies
   .cache_put(
     f, .ortholog_memo,
     .homologies_for_pair(row$root, release, kind, species, to)
@@ -332,20 +314,20 @@ fetch_orthologs <- function(species, to, release, kind = c("protein", "ncrna"),
 
 #' Find orthologs of gene identifiers in another species
 #'
-#' Detects the species and release from the identifiers, fetches that release's
-#' Compara orthologs against `to` (streamed once, then cached) and returns the
-#' orthologous identifiers with their gene names.
+#' Detects the species from identifiers and defaults to its newest indexed
+#' Ensembl release. Fetches that release's Compara orthologs against `to`
+#' (streamed once, then cached) and returns the orthologous identifiers with
+#' their gene names.
 #'
-#' Orthology is not a function: a gene can have several orthologs or none. With
-#' `one2one = TRUE` (the default) only one-to-one orthologs are returned, so
+#' A gene can have several orthologs or none. With `one2one = TRUE` (the
+#' default) only one-to-one orthologs are returned, so
 #' there is at most one row per input identifier and the result can be used
 #' directly as a lookup. Set it to `FALSE` to see one-to-many and many-to-many
 #' relationships as well.
 #'
-#' @param ids Character vector of gene identifiers, or of gene names. Names work
-#'   but identifiers are better: a name is not a stable key, and a symbol can
-#'   label more than one gene. When names are given, `species` must be too,
-#'   since a name does not say which species it came from.
+#' @param ids Character vector of gene identifiers or gene names. A symbol can
+#'   label multiple genes, so all matches are included. Supply `species` for
+#'   input containing only names.
 #' @param to Species to find orthologs in, in any form [resolve_species()]
 #'   accepts: `"mus_musculus"`, `"Mouse"` or `"mouse"`.
 #' @param species,release Skip detection by naming them.
@@ -368,16 +350,14 @@ fetch_orthologs <- function(species, to, release, kind = c("protein", "ncrna"),
 #' \dontrun{
 #' orthologs(c("ENSG00000141510", "ENSG00000012048"), to = "mus_musculus")
 #' }
-# names shadows base::names() in this body; use colnames()
 orthologs <- function(ids, to, species = NULL, release = NULL, one2one = TRUE,
                       names = TRUE, kind = c("protein", "ncrna"), quiet = FALSE) {
   kind <- match.arg(kind)
   to <- resolve_species(to)
   if (!is.null(species)) species <- resolve_species(species)
   ids <- .as_ids(ids)
-  # Gene names are accepted, but they are not identifiers: they say nothing about
-  # which species they came from, so that has to be named. Classify per element,
-  # per element; a set mixing identifiers and names keeps both.
+  # classify each element so mixed inputs retain identifiers and names;
+  # input containing only names requires an explicit species
   is_id <- .looks_like_id(ids)
   by_name <- !all(is_id)
   if (by_name && !any(is_id) && is.null(species)) {
@@ -391,17 +371,12 @@ orthologs <- function(ids, to, species = NULL, release = NULL, one2one = TRUE,
     species <- cand$species[1]
   }
   if (is.null(release)) {
-    # newest, not best-fitting: the newest release knows the most genes and old
-    # stable ids stay valid in it, where dating a handful of ids would pick
-    # whichever release has the fewest. always an Ensembl release; Compara is
-    # Ensembl's, even for ids quantified against GENCODE.
+    # default to the newest indexed Ensembl release for Compara lookups
     release <- .newest_release(species)
     if (!quiet) message(sprintf("%s -> %s, Ensembl release %s", species, to, release))
   }
 
   if (by_name) {
-    # keep the identifiers as they are and resolve only the names, so a mixed
-    # vector contributes both halves
     ids <- c(ids[is_id], .ids_from_names(ids[!is_id], species, release))
     if (!length(ids)) {
       return(.empty_homology(names))
@@ -411,8 +386,7 @@ orthologs <- function(ids, to, species = NULL, release = NULL, one2one = TRUE,
   h <- fetch_orthologs(species, to, release, kind = kind)
   if (one2one) h <- h[h$homology_type == "ortholog_one2one", , drop = FALSE]
 
-  # match on bare ids so a versioned input resolves against Compara's unversioned
-  # stable ids, exactly as gene_names() does
+  # match bare identifiers against Compara's unversioned stable IDs
   bare <- .bare(ids)
   keep <- h[h$id %in% bare, , drop = FALSE]
   # report the caller's own identifiers back, versions and all. when the
@@ -424,9 +398,7 @@ orthologs <- function(ids, to, species = NULL, release = NULL, one2one = TRUE,
     if (!nrow(keep)) {
       return(.empty_homology(TRUE))
     }
-    # Name both sides from the same Ensembl release, so the two halves of a row
-    # describe one vintage. An identifier with no symbol comes back unchanged,
-    # exactly as gene_names() promises, so the column is always usable.
+    # name both sides from the same Ensembl release; preserve IDs lacking symbols
     keep$name <- .named(keep$id, species, release)
     keep$ortholog_name <- .named(keep$ortholog_id, to, release)
     keep <- keep[, .HOM_COLS]

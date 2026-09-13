@@ -3,7 +3,7 @@
 .species_tbl <- .once(function() {
   f <- .extdata("species_names.rds")
   if (!file.exists(f)) {
-    # a convenience, not the index; without them only the Ensembl name resolves
+    # return the species-table schema when the bundled name table is absent
     return(data.frame(
       species = character(), common = character(),
       taxonomy_id = integer(), division = character(),
@@ -13,12 +13,10 @@
   readRDS(f)
 })
 
-# lowercase, drop punctuation, collapse whitespace, so a typed name compares
 #' A user-supplied name, or a message saying why it cannot be one
 #'
-#' The guard belongs at the public boundary, not inside `.norm_name()`: that one
-#' is called vectorised over the whole 360-row table, where a scalar assertion
-#' would be wrong.
+#' Validate scalar names at public entry points; `.norm_name()` also handles
+#' vectors from the species table.
 #' @noRd
 .as_name <- function(x, arg) {
   if (!is.character(x) || length(x) != 1L || is.na(x) || !nzchar(trimws(x))) {
@@ -36,14 +34,14 @@
     grepl(n, .norm_name(tbl$species), fixed = TRUE)
 }
 
+# lowercase, replace punctuation and collapse whitespace for name matching
 .norm_name <- function(x) {
   x <- tolower(trimws(x))
   x <- gsub("[^a-z0-9]+", " ", x)
   trimws(gsub(" +", " ", x))
 }
 
-# Ensembl's display names are not the words people type: the rat is "Norway
-# rat - BN/NHsdMcwi", the worm "Caenorhabditis elegans (Nematode, N2)".
+# map common shorthand names to their Ensembl species identifiers
 SPECIES_ALIASES <- c(
   human = "homo_sapiens", mouse = "mus_musculus", rat = "rattus_norvegicus",
   fly = "drosophila_melanogaster", fruitfly = "drosophila_melanogaster",
@@ -72,9 +70,8 @@ SPECIES_ALIASES <- c(
 #' Matching ignores case, punctuation and underscores.
 #'
 #' An unambiguous partial match is accepted and reported; an ambiguous one is
-#' refused with the candidates, because silently taking the first would pick a
-#' strain or a breed. `"mouse"` is exactly `mus_musculus`, not one of the
-#' twenty-odd `mus_musculus_*` strain genomes whose names also contain it.
+#' refused with the candidates. The `"mouse"` alias selects `mus_musculus`
+#' even when strain genomes also match the word.
 #'
 #' @param x A species name in any of the accepted forms.
 #' @param quiet Suppress the message reporting a partial match.

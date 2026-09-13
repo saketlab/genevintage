@@ -1,7 +1,7 @@
-# Gene sets defined by where a gene sits, not by what it is called.
+# Gene sets selected by sequence, biotype and symbol patterns.
 
-# Ensembl does not name the mitochondrial sequence the same way twice: MT for
-# vertebrates, Mito for yeast, MtDNA for C. elegans, Mt for Arabidopsis,
+# Mitochondrial sequence names vary by species: MT for vertebrates, Mito for
+# yeast, MtDNA for C. elegans, Mt for Arabidopsis,
 # mitochondrion_genome for Drosophila, chrM for UCSC-style references.
 MITO_SEQNAMES <- "^(chr)?(MT|MtDNA|Mito|mitochondrion(_genome)?|M)$"
 
@@ -29,8 +29,7 @@ HEMOGLOBIN_RX <- "^HB[ABDEGMQZ]([0-9]*|[A-Za-z][0-9]*|-[A-Za-z0-9]+)$"
 # (human) and mhc1/mhc2 (zebrafish) round out the per-clade spellings.
 MHC_RX <- "^(HLA-|H2-[A-Za-z]|MHC[12])"
 
-# spelled several ways, and not only across time: at r116 zebrafish says
-# antisense and lincRNA where most say lncRNA, and r75 split it four ways.
+# match lncRNA biotype spellings across species and releases
 LNCRNA_BIOTYPES <- paste0(
   "^(lncRNA|lincRNA|antisense(_RNA)?|macro_lncRNA|bidirectional_promoter_lncRNA",
   "|sense_intronic|sense_overlapping|processed_transcript",
@@ -39,11 +38,8 @@ LNCRNA_BIOTYPES <- paste0(
 
 #' The sex chromosomes present in one annotation
 #'
-#' Mammals use X and Y, birds Z and W, and C. elegans has an X but no Y, so
-#' males are XO. The trap is yeast: its chromosomes are numbered in Roman, so
-#' its "X" is chromosome 10 and it has no sex chromosome at all. Roman numbering
-#' always reaches at least IX and XI by the time it produces an X, and no
-#' species with a real sex chromosome has either, so that is the discriminator.
+#' Treat X, Y, Z and W as sex chromosomes. If IX or XI is present, exclude X
+#' because Roman-numbered annotations use it as an autosome name.
 #' @noRd
 .sex_seqnames <- function(seqnames) {
   present <- unique(seqnames)
@@ -60,8 +56,7 @@ LNCRNA_BIOTYPES <- paste0(
 #' @noRd
 .locate_annotation <- function(ids, species, release, assembly, source, quiet,
                                mapping = NULL) {
-  # a caller's own annotation goes straight in; nothing is detected or fetched,
-  # and the columns read below are the contract
+  # validate the supplied annotation's required columns and return it directly
   if (!is.null(mapping)) {
     if (!is.data.frame(mapping)) {
       stop("`mapping` must be a data frame.", call. = FALSE)
@@ -83,8 +78,7 @@ LNCRNA_BIOTYPES <- paste0(
   if (is.null(ids) && is.null(species)) {
     stop("name a `species`, or pass `ids` to detect one from.", call. = FALSE)
   }
-  # gene names carry no vintage, so they cannot pick a release. nine regexes over
-  # a matrix's row names is the single biggest cost here; run them once.
+  # identify stable IDs once; gene symbols alone require a release fallback
   x <- if (is.null(ids)) character() else .as_ids(ids)
   own <- x[.looks_like_id(x)]
   datable <- length(own) > 0L
@@ -111,8 +105,7 @@ LNCRNA_BIOTYPES <- paste0(
   if (!quiet) {
     message(sprintf("%s, %s release %s", species, source %||% "ensembl", release))
   }
-  # report the whole decision; callers that need the vintage should not have to
-  # re-derive it
+  # return the selected annotation metadata with its mapping
   list(
     species = species, source = source %||% "ensembl", release = release,
     assembly = assembly,
@@ -122,14 +115,9 @@ LNCRNA_BIOTYPES <- paste0(
 
 #' Pick the rows of an annotation a caller's tokens refer to
 #'
-#' Every token is tried as an identifier *and* as a gene name. Deciding for the
-#' vector as a whole, identifiers if any identifier matched and names otherwise,
-#' silently dropped whichever kind lost, so a matrix whose row names mix the two
-#' returned only half its genes.
-#'
-#' The caller's own token comes back in `input`, because that is what their row
-#' names hold and what they need to subset with; `id` stays the annotation's
-#' stable identifier so nothing is lost.
+#' Match each token as an identifier and as a gene name, preferring the ID
+#' match. Return the caller's token in `input` for row subsetting and retain
+#' the annotation's stable identifier in `id`.
 #' @noRd
 .restrict <- function(map, ids) {
   if (is.null(ids)) {
@@ -146,12 +134,9 @@ LNCRNA_BIOTYPES <- paste0(
 
 #' Mitochondrial genes
 #'
-#' The mitochondrial fraction of a cell's counts is the standard single-cell
-#' quality signal, and finding those genes means knowing which sequence the
-#' mitochondrion is called in this species' annotation, which is not the same
-#' string twice. Matching on the sequence name is exact; matching gene symbols
-#' against `"^MT-"` misses every species that does not use that convention and
-#' catches nuclear genes such as `MTOR` that merely start with the letters.
+#' Selects genes by mitochondrial sequence names in the annotation for use in
+#' mitochondrial count fractions. Sequence-name matching supports the naming
+#' conventions of different species.
 #'
 #' @param ids Optional character vector of gene identifiers or gene names. When
 #'   given, the species and release are detected from them and only these genes
@@ -159,10 +144,9 @@ LNCRNA_BIOTYPES <- paste0(
 #'   mitochondrial gene set for its newest indexed release is returned.
 #' @param species,release,assembly,source Skip detection by naming them.
 #'   `species` accepts anything [resolve_species()] does.
-#' @param mapping Use this annotation instead of fetching one: a local GTF, a
-#'   custom build, or a species the index does not cover. A data frame with at
-#'   least `id`, `name`, `chr` and `biotype`, as [fetch_mapping()] returns.
-#'   Nothing is detected or downloaded when it is supplied.
+#' @param mapping Supply an annotation directly to bypass detection and
+#'   downloading. A data frame with at least `id`, `name`, `chr` and `biotype`,
+#'   as [fetch_mapping()] returns; supports local GTFs and custom builds.
 #' @param quiet Suppress the message reporting what was detected.
 #'
 #' @return A data frame of `id`, `name`, `chr` and `biotype`, one row per
@@ -189,9 +173,9 @@ mito_genes <- function(ids = NULL, species = NULL, release = NULL,
 
 #' Sex-chromosome genes
 #'
-#' Which chromosomes count as sex chromosomes is a property of the clade, not a
-#' constant: mammals are XY, birds are ZW, and C. elegans has an X but no Y.
-#' Species with no sex chromosome at all return no rows.
+#' Sex chromosome names vary by clade: mammals use X and Y, birds Z and W,
+#' and C. elegans X. Annotations without recognised sex chromosomes return
+#' no rows.
 #'
 #' @inheritParams mito_genes
 #' @param which Restrict to one chromosome: `"X"`, `"Y"`, `"Z"` or `"W"`.
@@ -210,8 +194,7 @@ mito_genes <- function(ids = NULL, species = NULL, release = NULL,
 sex_genes <- function(ids = NULL, which = NULL, species = NULL, release = NULL,
                       assembly = NULL, source = NULL, mapping = NULL, quiet = FALSE) {
   .gene_subset(ids, species, release, assembly, source, quiet, mapping = mapping, function(sub, all, sp) {
-    # read the chromosome set off the whole annotation, not the caller's subset:
-    # a handful of ids might contain no Roman numerals to judge by
+    # use the whole annotation so Roman-numbered chromosomes can identify X
     keep <- .sex_seqnames(all$chr)
     if (!is.null(which)) {
       which <- toupper(which)
@@ -250,18 +233,14 @@ sex_genes <- function(ids = NULL, which = NULL, species = NULL, release = NULL,
   out[, cols]
 }
 
-#' Group Ensembl's biotypes into the four classes people actually ask for
+#' Group Ensembl biotypes by coding, pseudogene and immune status
 #'
-#' The biotype vocabulary drifts across releases and species, so this is a rule
-#' rather than a list. `pseudogene` is tested before the immunoglobulin prefix
-#' so `IG_V_pseudogene` lands with the pseudogenes.
-#'
-#' "Not protein-coding" covers pseudogenes and TEC entries as well as the genes
-#' that transcribe functional RNA, which is why the classes are separate.
+#' Test `pseudogene` before the immunoglobulin prefix so `IG_V_pseudogene`
+#' lands with pseudogenes. Missing biotypes, TEC and artifact entries are
+#' `other`; remaining biotypes are `noncoding`.
 #' @noRd
 .biotype_class <- function(x) {
-  # the vocabulary is tens of values over tens of thousands of rows; classify
-  # each distinct biotype once
+  # classify distinct biotypes once when the input exceeds 100 entries
   if (length(x) > 100L) {
     u <- unique(x)
     return(.biotype_class(u)[match(x, u)])
@@ -345,7 +324,7 @@ genes_by_biotype <- function(biotype, ids = NULL, species = NULL, release = NULL
 
 #' Protein-coding genes
 #'
-#' The `protein_coding` biotype, which is the count quoted in the literature.
+#' Selects the `protein_coding` biotype.
 #' Immunoglobulin and T-cell receptor segments encode protein too but carry
 #' their own biotypes; ask for `"immune"` through [genes_by_biotype()] to add
 #' them.
@@ -386,7 +365,7 @@ noncoding_genes <- function(ids = NULL, species = NULL, release = NULL,
 
 #' Ribosomal genes
 #'
-#' Two different sets go by this name, so `which` says which one:
+#' `which` selects the ribosomal set:
 #'
 #' * `"protein"` (the default): the genes encoding the ribosome's proteins,
 #'   the set behind a single-cell ribosomal-content metric.
@@ -395,10 +374,9 @@ noncoding_genes <- function(ids = NULL, species = NULL, release = NULL,
 #'   nuclear genes; [mito_genes()] does not return them.
 #' * `"all"`: every one of the above.
 #'
-#' Two filters beyond the `"^RP[SL]"` symbol pattern. Most genes carrying the
-#' name are ribosomal protein pseudogenes and lncRNAs, which the `protein_coding`
-#' biotype removes. The ten S6 kinases (`RPS6KA1` to `RPS6KL1`) and `RPS19BP1`
-#' survive that, and a name rule removes them.
+#' The `"^RP[SL]"` symbol pattern is restricted to `protein_coding` genes to
+#' exclude pseudogenes and lncRNAs. A name rule also excludes S6 kinases
+#' (`RPS6KA1` to `RPS6KL1`) and `RPS19BP1`.
 #'
 #' @inheritParams mito_genes
 #' @param which Which ribosomal set to return. See details.
@@ -423,8 +401,7 @@ ribosomal_genes <- function(ids = NULL, which = c("protein", "rrna", "mito", "al
     coding <- !is.na(sub$biotype) & sub$biotype == "protein_coding"
     hit <- rep(FALSE, nrow(sub))
     if (which %in% c("protein", "all")) {
-      # exclude the mitoribosome from the cytoplasmic set: MRPL/MRPS would
-      # otherwise be caught twice over by a pattern anchored on RP
+      # select coding RP-prefixed genes, excluding kinase and binding-protein names
       hit <- hit | (coding & grepl(RIBO_PROTEIN_RX, nm, ignore.case = TRUE) &
         !grepl(RIBO_PROTEIN_NOT_RX, nm, ignore.case = TRUE))
     }
@@ -503,9 +480,9 @@ rrna_genes <- function(ids = NULL, species = NULL, release = NULL,
 #' [mito_genes()] and [ribosomal_genes()]. Named per clade: `HBA1`/`HBB` in
 #' human, `Hba-a1`/`Hbb-bs` in mouse, `hbaa1`/`hbba1` in zebrafish.
 #'
-#' `HBEGF`, `HBS1L` and `HBP1` are not haemoglobin and the subunit letters
-#' exclude them. The haemoglobin pseudogenes (`HBAP1`, `HBBP1`, `HBZP1`) do
-#' match the name, so `protein_coding` is required alongside it.
+#' Subunit-letter matching excludes `HBEGF`, `HBS1L` and `HBP1`.
+#' Requiring `protein_coding` also excludes haemoglobin pseudogenes such as
+#' `HBAP1`, `HBBP1` and `HBZP1`.
 #'
 #' @inheritParams mito_genes
 #' @return A data frame of `id`, `name`, `chr` and `biotype`, shaped as
@@ -536,13 +513,9 @@ hemoglobin_genes <- function(ids = NULL, species = NULL, release = NULL,
 #' human, `H2-K1` in mouse, `mhc1uba` in zebrafish, so matching `"^HLA-"` finds
 #' nothing outside primates.
 #'
-#' Only the protein-coding genes are returned. Two thirds of the names carrying
-#' an `HLA-` prefix in human are pseudogenes or lncRNAs, which is the same trap
-#' [ribosomal_genes()] documents for `^RP[SL]`.
-#'
-#' The region's non-`HLA`-named members (`B2M`, `TAP1`, `TAP2`, `MICA`) are not
-#' included: this is a name rule over the MHC gene families, not a locus.
-#' Invertebrates, fungi and plants have no MHC, and get an empty result.
+#' Requires `protein_coding` and an MHC family name pattern. The patterns
+#' exclude regional genes such as `B2M`, `TAP1`, `TAP2` and `MICA`.
+#' Annotations without matching genes return an empty result.
 #'
 #' @inheritParams mito_genes
 #' @return A data frame of `id`, `name`, `chr` and `biotype`, shaped as
@@ -552,7 +525,7 @@ hemoglobin_genes <- function(ids = NULL, species = NULL, release = NULL,
 #' @export
 #' @examples
 #' \dontrun{
-#' mhc_genes(species = "human") # the 19 coding HLA genes on chromosome 6
+#' mhc_genes(species = "human") # coding HLA genes
 #' mhc_genes(species = "mouse") # H2-K1, H2-D1, H2-Aa, ...
 #' }
 mhc_genes <- function(ids = NULL, species = NULL, release = NULL,
@@ -577,16 +550,13 @@ mhc_genes <- function(ids = NULL, species = NULL, release = NULL,
 
 #' Long non-coding RNA genes
 #'
-#' Collects every spelling the class has gone by, because the annotations do not
-#' agree even with each other: at release 116 most species say `lncRNA`, but
-#' zebrafish says `antisense` and `lincRNA` and chimpanzee says `lincRNA`, while
-#' release 75 split it across `lincRNA`, `antisense`, `processed_transcript` and
+#' Matches lncRNA biotype spellings across species and releases, including
+#' `lncRNA`, `lincRNA`, `antisense`, `processed_transcript` and
 #' `3prime_overlapping_ncrna`.
 #'
-#' Some annotations do not draw the distinction at all: Drosophila and yeast
-#' file everything non-coding under a generic `ncRNA`, which is not the same
-#' claim and is therefore not counted here. When that is the case this says so,
-#' rather than returning an empty answer without explanation.
+#' Generic `ncRNA` entries are excluded. If the annotation contains them and
+#' the subset has no lncRNA matches, a message points to
+#' `genes_by_biotype("ncRNA")`.
 #'
 #' @inheritParams mito_genes
 #' @return A data frame of `id`, `name`, `chr` and `biotype`, shaped as
