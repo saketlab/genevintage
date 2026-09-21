@@ -27,10 +27,9 @@ release. All candidates are returned because adjacent releases can have
 indistinguishable fingerprints.
 }
 \description{
-Scores every release the index knows for this species. A release that could
-not yet have minted the newest identifier, or the highest version, is
-marked infeasible; the rest are ranked by how closely their gene count and
-identifier distribution match the input.
+Scores every release the index knows for this species, marks infeasible
+those that could not have produced the input, and ranks the rest by fit. See
+\code{vignette("how-it-works")} for the scoring.
 }
 \examples{
 ids <- readLines(system.file("extdata", "example_ids.txt.gz",

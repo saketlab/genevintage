@@ -13,6 +13,7 @@ Genevintage detects the species from the identifier prefixes and ranks the 'Ense
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://saketlab.github.io/genevintage/}
   \item \url{https://github.com/saketlab/genevintage}
   \item Report bugs at \url{https://github.com/saketlab/genevintage/issues}
 }

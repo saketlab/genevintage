@@ -1,4 +1,4 @@
-url: https://saketlab.github.io/genevintage
+url: https://genevintage.saketlab.org/R
 
 development:
   mode: auto
@@ -16,14 +16,14 @@ template:
       <meta property="og:locale" content="en_US">
 
 home:
-  title: "Date a set of gene identifiers"
+  title: "Identify the gene build for a set of gene identifiers"
   description: >
     Detect the species and annotation release a vector of gene identifiers came
     from, convert them to gene names, group genes by class, and map them to
     orthologs in another species.
 
   links:
-  - text: How the dating works
+  - text: How genevintage works
     href: articles/how-it-works.html
   - text: Report a bug
     href: https://github.com/saketlab/genevintage/issues
@@ -34,10 +34,6 @@ navbar:
     right: [search, lightswitch, github, website]
 
   components:
-    get_started:
-      text: Get Started
-      href: articles/genevintage.html
-
     reference:
       text: Reference
       href: reference/index.html
@@ -49,7 +45,7 @@ navbar:
 
     website:
       text: Saket Lab
-      href: https://saketlab.in/
+      href: https://saketlab.org
 
 articles:
 - title: Guides
@@ -76,6 +72,7 @@ reference:
   contents:
   - detect_species
   - detect_release
+  - detect_species_names
   - compare_releases
   - guess_scheme
   - parse_ens
@@ -123,6 +120,8 @@ reference:
   - fetch_mapping
   - fetch_orthologs
   - stream_gtf
+  - build_symbol_index
+  - build_symbol_index_from_gtf
   - stream_homologies
   - stream_xrefs
   - gene_cache
@@ -133,7 +132,7 @@ reference:
 
 authors:
   Saket Choudhary:
-    href: https://saket-choudhary.me/
+    href: https://saketlab.org
 
 footer:
   structure:

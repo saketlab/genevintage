@@ -18,6 +18,7 @@ R/Meta/
 
 R/inst/extdata/parts/
 R/inst/extdata/parts_gencode/
+R/inst/extdata/symbol-index-parts/
 
 R/man/figures/logo*
 
@@ -26,4 +27,5 @@ R/docs/
 R/tests/testthat/Rplots.pdf
 
 .DS_Store
+
 

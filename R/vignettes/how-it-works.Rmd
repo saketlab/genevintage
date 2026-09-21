@@ -1,0 +1,110 @@
+---
+title: "How genevintage works"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{How genevintage works}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 4.2)
+library(genevintage)
+```
+
+`genevintage` answers two questions about a set of gene identifiers: which
+species, and which release. Both are answered from the identifiers alone, using
+the bundled fingerprint index.
+
+## Detecting species
+
+`detect_species()` first works out what fraction of the input each candidate
+species' identifier prefix explains:
+
+```{r frac}
+ids <- c(
+  "ENSMUSG00000051951", "ENSMUSG00000089699", "ENSMUSG00000051951",
+  "TP53"
+)
+cand <- detect_species(ids)
+head(cand[, c("species", "prefix", "frac")])
+```
+
+Three of the four inputs (one a repeat) carry the `ENSMUSG` prefix, so every
+mouse strain that shares it ties at `frac = 0.75`. Ties are broken in order by:
+
+1. **Prefix length.** A longer matching prefix ranks higher.
+2. **`reach`.** Could the species have issued the input's highest identifier
+   number? The largest number in the input is compared with the largest `qmax`
+   (the highest identifier number in a gene set) ever indexed for the species,
+   within `QMAX_TOLERANCE`.
+3. **`fit`.** How close is the input's gene count to a real gene set? It is the
+   smallest log-scale gap between the number of unique IDs and any indexed
+   release's gene count. It is only informative for a full gene set.
+
+Any remaining tie is broken by species name, for a stable order; such species are
+indistinguishable from the identifiers alone. `reach` and `fit` are used for
+ranking only and are not returned.
+
+## Determining the annotation release
+
+`detect_release()` compares the input against the fingerprint index and rules
+out releases that could not have produced it, using two facts:
+
+1. Identifier numbers (usually) only go up, so the highest number in the input is a
+   floor, i.e. no earlier release would have it
+2. A gene's version only goes up too, so the highest version in the input is
+   also a floor.
+
+`QMAX_TOLERANCE` lets a release's `qmax` fall slightly short of the
+input's highest number. Ensembl sometimes retires its top-numbered genes, which
+lowers `qmax` without changing the assembly. `qmax_violations()` lists every
+case in the shipped index:
+
+```{r violations}
+qmax_violations()
+```
+
+Where a violation exists, `detect_release()` skips the floor for that
+species, since the check would fail against the species' own history.
+
+Among the releases left feasible, distance ranks the rest:
+
+```{r dist}
+ids2 <- readLines(system.file("extdata", "example_ids.txt.gz",
+  package = "genevintage"
+))
+head(detect_release(ids2), 3)
+```
+
+`dist` is the absolute difference in `log1p(gene count)` between the input
+and each candidate release, so a thousand genes matter less in human (tens of
+thousands of genes) than in a species with a few hundred. For species whose
+identifier numbers are ordered, it adds the same comparison on the 90th
+percentile of identifier numbers, which separates releases that share a gene
+count but use different numbers.
+
+Most non-Ensembl schemes carry no order in their identifier numbers. Such
+schemes skip the numeric floor and the quantile term entirely:
+
+```{r unordered}
+head(detect_release(c("YAL001C", "YAL002W", "YAL003W"), species = "yeast"), 5)
+```
+
+## Handling GENCODE and Ensembl
+
+Human and mouse are indexed against GENCODE as well as Ensembl, since their
+RNA-seq is often quantified against GENCODE, whose gene set differs in size from
+Ensembl's at the same release. `detect_release()` ranks across both and reports
+which one each row came from in `source`.
+
+## Caution around new releases
+
+The index covers a fixed range of releases. If your best match is the oldest
+or newest release in that range, treat it with caution. Your IDs may come from
+a release just outside the range.
+`detect_release()` warns when this happens.
+
+```{r edge}
+head(detect_release(c("ENSG00000141510", "ENSG00000012048"), species = "human"), 3)
+```

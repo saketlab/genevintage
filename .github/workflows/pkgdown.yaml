@@ -1,6 +1,20 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 on:
+  push:
+    branches: [main, master]
+    paths:
+      - "R/R/**"
+      - "R/man/**"
+      - "R/vignettes/**"
+      - "R/pkgdown/**"
+      - "R/_pkgdown.yml"
+      - "R/DESCRIPTION"
+      - "R/NEWS.md"
+      - "R/README*"
+      - ".github/workflows/pkgdown.yaml"
+  release:
+    types: [published]
   workflow_dispatch:
 
 name: pkgdown.yaml
@@ -10,13 +24,13 @@ permissions: read-all
 jobs:
   pkgdown:
     runs-on: ubuntu-latest
-    # Only restrict concurrency for non-PR jobs
     concurrency:
-      group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
+      group: pkgdown-${{ github.ref }}
+      cancel-in-progress: true
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -32,13 +46,79 @@ jobs:
 
       - name: Build site
         working-directory: R
-        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
+        run: pkgdown::build_site(preview = FALSE, install = FALSE, new_process = FALSE)
         shell: Rscript {0}
 
-      - name: Deploy to GitHub pages 🚀
+      - name: The build has to have produced a landing page
+        run: test -f R/docs/index.html
+
+      - name: Make room for the new release
         if: github.event_name != 'pull_request'
-        uses: JamesIves/github-pages-deploy-action@d92aa235d04922e8f08b40ce78cc5442fcfbfa2f # v4.8.0
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          clean: false
-          branch: gh-pages
-          folder: R/docs
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          script: |
+            set -e
+            cd /var/www/genevintage
+            rm -rf site-incoming
+            mkdir -p site-incoming releases
+
+      - name: Upload the built site
+        if: github.event_name != 'pull_request'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          source: "R/docs/*"
+          target: /var/www/genevintage/site-incoming
+          strip_components: 2
+
+      # nginx serves /var/www/genevintage/R, a symlink; the swap is atomic, and a
+      # failed smoke test puts the previous release back.
+      - name: Swap it in
+        if: github.event_name != 'pull_request'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /var/www/genevintage
+
+            test -f site-incoming/index.html || {
+              echo "::error::upload has no index.html; refusing to swap"
+              exit 1
+            }
+
+            release="releases/${{ github.sha }}-${{ github.run_id }}"
+            rm -rf "$release"
+            mv site-incoming "$release"
+
+            previous=$(readlink R || true)
+            ln -sfn "$release" R.new
+            mv -T R.new R
+
+            code=$(curl -sk -o /dev/null -w '%{http_code}' \
+                     --resolve genevintage.saketlab.org:443:127.0.0.1 \
+                     https://genevintage.saketlab.org/R/ || true)
+            if [ "$code" != "200" ]; then
+              if [ -n "$previous" ] && [ -d "$previous" ]; then
+                ln -sfn "$previous" R.new
+                mv -T R.new R
+                echo "::error::/R/ answered $code; rolled back to $previous"
+              else
+                echo "::error::/R/ answered $code and there is nothing to roll back to"
+              fi
+              exit 1
+            fi
+
+            live=$(readlink R)
+            for old in $(ls -1dt releases/*/ 2>/dev/null | tail -n +6); do
+              [ "${old%/}" = "$live" ] || rm -rf "$old"
+            done
+            echo "deployed $release"
