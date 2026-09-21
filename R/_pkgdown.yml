@@ -15,6 +15,11 @@ template:
       <meta property="og:site_name" content="genevintage">
       <meta property="og:locale" content="en_US">
 
+  opengraph:
+    image:
+      src: man/figures/logo.png
+      alt: genevintage logo
+
 home:
   title: "Identify the gene build for a set of gene identifiers"
   description: >

@@ -1,4 +1,4 @@
-<img src="logos/logo.png" align="right" height="160" alt="genevintage logo" />
+<img src="R/man/figures/logo.png" align="right" height="160" alt="genevintage logo" />
 
 # genevintage
 
