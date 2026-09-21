@@ -56,9 +56,7 @@ articles:
 - title: Guides
   navbar: ~
   contents:
-  - genevintage
   - how-it-works
-  - matrix-rows
 
 reference:
 - title: Naming

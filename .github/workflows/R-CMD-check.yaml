@@ -51,4 +51,4 @@ jobs:
         with:
           working-directory: R
           upload-snapshots: true
-          build_args: 'c("--no-manual","--no-build-vignettes")'
+          build_args: 'c("--no-manual")'
