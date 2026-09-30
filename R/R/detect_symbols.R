@@ -83,7 +83,7 @@ detect_species_names <- function(symbols, index, min_overlap = 20L,
   if (!is.data.frame(index) || !all(c("species", "symbol") %in% names(index))) stop("index must contain species and symbol columns.", call. = FALSE)
   # Date-like tokens are valid symbols, but are too error-prone to provide
   # positive evidence after spreadsheet conversion (e.g. SEPT1/MARCH1).
-  excel <- grepl(paste0("^(", paste(unlist(EXCEL_MONTHS), collapse = "|"), ")[0-9]+$"), symbols)
+  excel <- grepl(.EXCEL_SYMBOL_RX, symbols)
   informative <- symbols[!excel]
   if (!length(informative)) {
     return(data.frame())

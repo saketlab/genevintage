@@ -70,10 +70,20 @@ Ensembl release 95 and \code{SEPTIN9} against release 116.
 \details{
 Tokens that are not damaged are returned unchanged, so the result drops
 straight back into \code{rownames()}. A token with no surviving candidate, or with
-more than one, is also returned unchanged and reported.
+more than one, is also returned unchanged and reported. \code{MARCH1} and
+\code{MARC1} both become \code{1-Mar}; a candidate already present undamaged elsewhere
+in \code{x} is ruled out, which usually resolves it.
 
-Pass \code{mapping}, or both \code{species} and \code{release}, whenever \code{x} contains a
-damaged token so candidates can be checked against a specific annotation.
+Candidates are checked against an annotation: \code{mapping} if given, otherwise
+\code{species} at \code{release}. Without \code{release} the newest one is used, which
+returns current HGNC spellings (\code{SEPTIN9}, not \code{SEPT9}); stable IDs in \code{x}
+are dated instead. Without \code{species}, it is detected from stable IDs in \code{x},
+and bare symbols are refused.
+
+Renames beyond the old spelling come from the species' nomenclature
+authority: HGNC for human, MGI for mouse, ZFIN for zebrafish (\code{SEP15} to
+\code{SELENOF}, \code{sept9} to \code{septin9a}).  A \code{mapping} without \code{species} is
+read as human nomenclature.
 
 For a matrix, sparse \code{Matrix} or data frame, only row names are replaced;
 dimensions, row order and other attributes are preserved. Call
@@ -82,11 +92,16 @@ and \code{unresolved} attributes.
 }
 \examples{
 \dontrun{
-# release 95 resolves these as SEPT9 and MARCH1
-correct_genenames(c("9-Sep", "1-Mar", "TP53"), species = "human", release = 95)
+# release 95 resolves these as SEPT9 and DEC1
+correct_genenames(c("9-Sep", "1-Dec", "TP53"), species = "human", release = 95)
 
-# release 116 resolves these as SEPTIN9 and MARCHF1
-correct_genenames(c("9-Sep", "1-Mar", "TP53"), species = "human", release = 116)
+# release 116 resolves these as SEPTIN9 and DELEC1
+correct_genenames(c("9-Sep", "1-Dec", "TP53"), species = "human", release = 116)
+
+# no release: the newest, so current spellings
+correct_genenames(c("9-Sep", "1-Dec"), species = "human")
+
+correct_genenames(c("1-Mar", "MTARC1"), species = "human", release = 116)
 
 m <- matrix(1:4, nrow = 2, dimnames = list(c("9-Sep", "TP53"), c("s1", "s2")))
 correct_genenames(m, species = "human", release = 116)

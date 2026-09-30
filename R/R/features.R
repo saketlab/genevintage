@@ -69,7 +69,7 @@ LNCRNA_BIOTYPES <- paste0(
       )
     }
     return(list(
-      species = if (is.null(species)) "the supplied mapping" else species,
+      species = if (is.null(species)) NULL else resolve_species(species, quiet = quiet),
       source = source, release = release, assembly = assembly,
       map = mapping
     ))
@@ -225,7 +225,7 @@ sex_genes <- function(ids = NULL, which = NULL, species = NULL, release = NULL,
                          mapping = NULL, pick) {
   a <- .locate_annotation(ids, species, release, assembly, source, quiet, mapping)
   sub <- .restrict(a$map, ids)
-  out <- sub[pick(sub, a$map, a$species), , drop = FALSE]
+  out <- sub[pick(sub, a$map, a$species %||% "the supplied mapping"), , drop = FALSE]
   rownames(out) <- NULL
   cols <- c(if (!is.null(ids)) "input", "id", "name", "chr", "biotype")
   # carry the coordinates through when the annotation has them

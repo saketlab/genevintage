@@ -1,12 +1,18 @@
 # Gene symbols Excel silently reinterprets as dates or numbers, and the way back.
 
-# old and new HGNC spellings listed (SEPT1/SEPTIN1, MARCH1/MARCHF1, DEC1/DELEC1); annotation decides which applies
+# spellings Excel reads as a month
 EXCEL_MONTHS <- list(
-  jan = c("JAN"), feb = c("FEB"), mar = c("MARCH", "MARCHF", "MAR"),
+  jan = c("JAN"), feb = c("FEB"), mar = c("MARCH", "MARC", "MAR"),
   apr = c("APR"), may = c("MAY"), jun = c("JUN"), jul = c("JUL"),
-  aug = c("AUG"), sep = c("SEPT", "SEPTIN", "SEP"), oct = c("OCT"),
-  nov = c("NOV"), dec = c("DEC", "DELEC")
+  aug = c("AUG"), sep = c("SEPT", "SEP"), oct = c("OCT"),
+  nov = c("NOV"), dec = c("DEC")
 )
+.EXCEL_SYMBOL_RX <- paste0("^(", paste(unlist(EXCEL_MONTHS), collapse = "|"), ")[0-9]{1,2}$")
+
+# HGNC, MGI and ZFIN renames, per species; data-raw/build_excel_renames.R
+.excel_renames <- .once(function() {
+  utils::read.delim(.extdata("excel_renames.tsv"), comment.char = "#", colClasses = "character")
+})
 
 # inner groups shift capture indices; longest alternatives match before their prefixes
 .MONTH_RX <- paste("jan", "feb", "march|mar", "apr", "may", "june|jun",
@@ -14,7 +20,6 @@ EXCEL_MONTHS <- list(
   sep = "|"
 )
 
-# recognise scientific notation for numeric-symbol candidate generation
 .SCI_RX <- "^([0-9])\\.([0-9]+)[Ee]\\+?([0-9]+)$"
 
 # leading apostrophe (forced-text) and CSV quoting don't belong to the symbol
@@ -24,10 +29,9 @@ EXCEL_MONTHS <- list(
   sub("[ T][0-9]{1,2}:[0-9]{2}(:[0-9]{2})?$", "", x, perl = TRUE)
 }
 
-# Separators differ by locale: 1-Mar, 1/Mar, 01.Sep, "Sep 15".
+# separators differ by locale: 1-Mar, 1/Mar, 01.Sep, Sep 15
 .SEP <- "[-/. ]"
 
-# each damage rule pairs a recognition pattern with a month/day parser
 .mon <- function(s) match(substr(tolower(s), 1, 3), tolower(month.abb))
 .dmy <- function(p) list(c(.mon(p[3]), as.integer(p[2])))
 
@@ -61,7 +65,7 @@ DAMAGE <- list(
     kind = "date_serial", rx = "^([0-9]{5})$",
     md = function(p) {
       n <- as.integer(p[2])
-      # skip serials <=60, which precede Excel's phantom February 29, 1900 or denote it
+      # serials <=60 predate or are Excel's phantom 29 Feb 1900
       if (n <= 60L) {
         return(list())
       }
@@ -72,7 +76,7 @@ DAMAGE <- list(
   list(kind = "sci", rx = .SCI_RX, md = function(p) list())
 )
 
-# prefilter for separators, numeric serials and exponents before parsing damage
+# cheap prefilter before the damage regexes
 .MAYBE_RX <- "[-/. ]|^[0-9]+$|[0-9][Ee]"
 
 .excel_kind <- function(x) {
@@ -93,7 +97,7 @@ DAMAGE <- list(
   out
 }
 
-# slash dates read both ways (locale unknown); annotation settles which
+# slash dates read both ways (locale unknown); annotation decides
 .excel_dates <- function(x) {
   lapply(.excel_clean(x), function(s) {
     for (r in DAMAGE) {
@@ -106,7 +110,13 @@ DAMAGE <- list(
   })
 }
 
-.excel_candidates <- function(x) {
+# current symbols the species' authority gave these old ones
+.renamed <- function(x, species) {
+  ren <- .excel_renames()
+  ren$symbol[ren$species == species & ren$previous %in% toupper(x)]
+}
+
+.excel_candidates <- function(x, species) {
   x <- .excel_clean(x) # match and extract from the same string
   dates <- .excel_dates(x)
   lapply(seq_along(x), function(i) {
@@ -117,16 +127,16 @@ DAMAGE <- list(
       if (is.na(e) || e < 0) {
         return(character())
       }
-      # RIKEN clone names are the common casualty and Ensembl suffixes them Rik
+      # RIKEN clone names; Ensembl suffixes them Rik
       stem <- paste0(digits, "E", formatC(e, width = 2, flag = "0"))
       return(c(stem, paste0(stem, "Rik")))
     }
     unlist(lapply(dates[[i]], function(md) {
-      # candidates require months 1 through 12 and days 1 through 31
       if (anyNA(md) || md[1] < 1 || md[1] > 12 || md[2] < 1 || md[2] > 31) {
         return(character())
       }
-      paste0(EXCEL_MONTHS[[md[1]]], md[2])
+      cand <- paste0(EXCEL_MONTHS[[md[1]]], md[2])
+      c(cand, .renamed(cand, species))
     }))
   })
 }
@@ -141,10 +151,20 @@ DAMAGE <- list(
 #'
 #' Tokens that are not damaged are returned unchanged, so the result drops
 #' straight back into `rownames()`. A token with no surviving candidate, or with
-#' more than one, is also returned unchanged and reported.
+#' more than one, is also returned unchanged and reported. `MARCH1` and
+#' `MARC1` both become `1-Mar`; a candidate already present undamaged elsewhere
+#' in `x` is ruled out, which usually resolves it.
 #'
-#' Pass `mapping`, or both `species` and `release`, whenever `x` contains a
-#' damaged token so candidates can be checked against a specific annotation.
+#' Candidates are checked against an annotation: `mapping` if given, otherwise
+#' `species` at `release`. Without `release` the newest one is used, which
+#' returns current HGNC spellings (`SEPTIN9`, not `SEPT9`); stable IDs in `x`
+#' are dated instead. Without `species`, it is detected from stable IDs in `x`,
+#' and bare symbols are refused.
+#'
+#' Renames beyond the old spelling come from the species' nomenclature
+#' authority: HGNC for human, MGI for mouse, ZFIN for zebrafish (`SEP15` to
+#' `SELENOF`, `sept9` to `septin9a`).  A `mapping` without `species` is
+#' read as human nomenclature.
 #'
 #' For a matrix, sparse `Matrix` or data frame, only row names are replaced;
 #' dimensions, row order and other attributes are preserved. Call
@@ -178,11 +198,16 @@ DAMAGE <- list(
 #' @export
 #' @examples
 #' \dontrun{
-#' # release 95 resolves these as SEPT9 and MARCH1
-#' correct_genenames(c("9-Sep", "1-Mar", "TP53"), species = "human", release = 95)
+#' # release 95 resolves these as SEPT9 and DEC1
+#' correct_genenames(c("9-Sep", "1-Dec", "TP53"), species = "human", release = 95)
 #'
-#' # release 116 resolves these as SEPTIN9 and MARCHF1
-#' correct_genenames(c("9-Sep", "1-Mar", "TP53"), species = "human", release = 116)
+#' # release 116 resolves these as SEPTIN9 and DELEC1
+#' correct_genenames(c("9-Sep", "1-Dec", "TP53"), species = "human", release = 116)
+#'
+#' # no release: the newest, so current spellings
+#' correct_genenames(c("9-Sep", "1-Dec"), species = "human")
+#'
+#' correct_genenames(c("1-Mar", "MTARC1"), species = "human", release = 116)
 #'
 #' m <- matrix(1:4, nrow = 2, dimnames = list(c("9-Sep", "TP53"), c("s1", "s2")))
 #' correct_genenames(m, species = "human", release = 116)
@@ -208,21 +233,22 @@ correct_genenames <- function(x, species = NULL, release = NULL, assembly = NULL
   hit <- which(!is.na(.excel_kind(x)))
 
   if (length(hit)) {
-    if (is.null(mapping) && (is.null(species) || is.null(release))) {
-      stop("gene symbols alone cannot fix Excel damage: pass `mapping`, or both `species` and `release`.",
-        call. = FALSE
-      )
-    }
-
     loc <- .locate_annotation(x, species, release, assembly, source, quiet,
       mapping = mapping
     )
     known <- loc$map$name[!is.na(loc$map$name)]
     lower <- tolower(known)
 
-    cand <- .excel_candidates(x[hit])
+    nomen <- loc$species %||% "homo_sapiens"
+    cand <- .excel_candidates(x[hit], nomen)
+    named <- known[match(tolower(unlist(cand)), lower)]
+    named <- split(named, factor(rep(seq_along(cand), lengths(cand)), seq_along(cand)))
+    # a gene present undamaged, under either spelling, is not the one a token lost
+    present <- intersect(tolower(unlist(named)), tolower(c(x[-hit], .renamed(x[-hit], nomen))))
     for (j in seq_along(hit)) {
-      real <- base::unique(known[match(tolower(cand[[j]]), lower, nomatch = 0L)])
+      real <- base::unique(named[[j]][!is.na(named[[j]])])
+      absent <- real[!tolower(real) %in% present]
+      if (length(absent)) real <- absent
       if (length(real) == 1L) {
         out[hit[j]] <- real
         corrected[hit[j]] <- TRUE

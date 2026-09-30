@@ -32,7 +32,7 @@ GeneID2Name(ids)
 ```r
 DetectSpeciesNames(c("TP53", "BRCA1", "MYC"), idx)    # idx <- BuildSymbolIndex(...); detect from symbols
 m <- GeneID2Name(m)                                   # rownames(m), id -> name
-CorrectGeneNames(c("9-Sep", "1-Mar"), species = "human") # undo Excel's date/float autocorrect
+CorrectGeneNames(c("9-Sep", "1-Dec"), species = "human", release = 116) # undo Excel's date/float autocorrect
 GeneIDs(c("TP53", "BRCA1"), species = "human")        # name -> id, and back
 AnnotateGenes(rownames(counts))                       # full record: symbol, biotype, coords
 MitoGenes(rownames(counts)); SexGenes(species = "human"); RibosomalGenes(species = "human")
