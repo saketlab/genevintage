@@ -121,8 +121,10 @@ reference:
   desc: The streaming and caching layer underneath
   contents:
   - fetch_mapping
+  - gene_lengths
   - fetch_orthologs
   - stream_gtf
+  - stream_exon_lengths
   - build_symbol_index
   - build_symbol_index_from_gtf
   - stream_homologies

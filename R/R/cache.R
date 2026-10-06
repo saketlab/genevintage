@@ -1,10 +1,12 @@
 # Cache filenames use "-" between fields so names containing "_" stay intact.
 #
 #   mapping-<source>-<species>-<assembly>-<release>.rds
+#   lengths-<source>-<species>-<assembly>-<release>.rds
 #   orthologs-<species>-<to>-<release>-<homology>.rds
 #   xrefs-<db>-<species>-<assembly>-<release>.rds
 .CACHE_FIELDS <- list(
   mapping = c("source", "species", "assembly", "release"),
+  lengths = c("source", "species", "assembly", "release"),
   orthologs = c("species", "to", "release", "homology"),
   xrefs = c("db", "species", "assembly", "release")
 )

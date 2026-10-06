@@ -1,3 +1,7 @@
+# Unrelease
+
+- Add support for `gene_lengths()`/`stream_exon_lengths()` to fetch exon-union gene lengths
+
 # genevintage 0.1.2
 
 - `geneid2name()` and `correct_genenames()` (renamed from `correct_names()`)

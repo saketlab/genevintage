@@ -38,6 +38,14 @@ DetectSpeciesNames <- detect_species_names
 #' @export
 EntrezIDs <- entrez_ids
 
+#' @rdname gene_lengths
+#' @export
+GeneLengths <- gene_lengths
+
+#' @rdname stream_exon_lengths
+#' @export
+StreamExonLengths <- stream_exon_lengths
+
 #' @rdname fetch_mapping
 #' @export
 FetchMapping <- fetch_mapping

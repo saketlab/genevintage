@@ -207,20 +207,6 @@ stream_gtf <- function(url, chunk = 100000) {
   }
   if (!length(k)) stop("no gene records in ", url, call. = FALSE)
 
-  # anchor on the separator; unanchored ".*gene_id" also matches havana_gene_id
-  attr_of <- function(key) {
-    # lookbehind accepts the first attribute after a tab
-    rx <- sprintf('(?<![A-Za-z_])%s "([^"]*)"', key)
-    m <- regexpr(rx, k, perl = TRUE)
-    out <- rep(NA_character_, length(k))
-    hit <- m != -1L
-    if (any(hit)) {
-      st <- attr(m, "capture.start")[hit, 1]
-      len <- attr(m, "capture.length")[hit, 1]
-      out[hit] <- substring(k[hit], st, st + len - 1L)
-    }
-    out
-  }
   # GTF columns 1, 4, 5, 7
   f <- strsplit(k, "\t", fixed = TRUE)
   col <- function(i) vapply(f, `[`, "", i)
@@ -228,7 +214,7 @@ stream_gtf <- function(url, chunk = 100000) {
   start <- suppressWarnings(as.integer(col(4L)))
   end <- suppressWarnings(as.integer(col(5L)))
   strand <- col(7L)
-  ids <- attr_of("gene_id")
+  ids <- .gtf_attr(k, "gene_id")
   if (mean(is.na(ids)) > 0.01) {
     stop("gene_id could not be read from ", url,
       " -- the attribute format is not what was expected.",
@@ -236,15 +222,15 @@ stream_gtf <- function(url, chunk = 100000) {
     )
   }
   # GENCODE ships no gene_version; its version is in the id (ENSG00000223972.5)
-  ver <- as.integer(attr_of("gene_version"))
+  ver <- as.integer(.gtf_attr(k, "gene_version"))
   if (all(is.na(ver))) ver <- .id_version(ids)
   # GENCODE writes gene_type where Ensembl writes gene_biotype; without the
   # fallback every biotype-driven function returns nothing on GENCODE
-  bio <- attr_of("gene_biotype")
-  if (all(is.na(bio))) bio <- attr_of("gene_type")
+  bio <- .gtf_attr(k, "gene_biotype")
+  if (all(is.na(bio))) bio <- .gtf_attr(k, "gene_type")
   data.frame(
     id = ids,
-    name = attr_of("gene_name"),
+    name = .gtf_attr(k, "gene_name"),
     chr = chr,
     start = start,
     end = end,
@@ -256,6 +242,21 @@ stream_gtf <- function(url, chunk = 100000) {
     biotype = bio,
     stringsAsFactors = FALSE
   )
+}
+
+# anchor on the separator; unanchored ".*gene_id" also matches havana_gene_id
+.gtf_attr <- function(k, key) {
+  # lookbehind accepts the first attribute after a tab
+  rx <- sprintf('(?<![A-Za-z_])%s "([^"]*)"', key)
+  m <- regexpr(rx, k, perl = TRUE)
+  out <- rep(NA_character_, length(k))
+  hit <- m != -1L
+  if (any(hit)) {
+    st <- attr(m, "capture.start")[hit, 1]
+    len <- attr(m, "capture.length")[hit, 1]
+    out[hit] <- substring(k[hit], st, st + len - 1L)
+  }
+  out
 }
 
 #' Where GENCODE keeps one release's GTF
@@ -275,38 +276,11 @@ stream_gtf <- function(url, chunk = 100000) {
   )
 }
 
-#' Mapping table for one species and Ensembl release
+#' The index row and effective release for one annotation
 #'
-#' Streamed from the Ensembl GTF on first use, then cached, so later calls are
-#' offline. Gene versions are read from GTF attributes or identifier suffixes.
-#'
-#' @param species Species, in any form [resolve_species()] accepts:
-#'   `"homo_sapiens"`, `"Human"` or `"human"`.
-#' @param release Ensembl release number.
-#' @param assembly Assembly suffix as the index records it, e.g. `"38"` or
-#'   `"37"`. Together with `species`, `source` and `release` it selects the index
-#'   row that carries the annotation's FTP root and, where an assembly is
-#'   frozen, the release its annotation actually stopped at.
-#' @param source Annotation family: `"ensembl"`, or `"gencode"` /
-#'   `"gencode_all"` for GENCODE's primary and scaffold-inclusive gene sets.
-#'   Needed only where one release number exists in more than one of them.
-#' @param refresh Re-download even when a cached copy exists.
-#'
-#' @return A data frame of `id`, `name`, `chr`, `start`, `end`, `strand`,
-#'   `span`, `id_version` and `biotype`, suitable as the `mapping` argument of
-#'   [gene_names()]. `span` is the genomic extent from first to last base;
-#'   TPM and FPKM require exonic length. See [stream_gtf()].
-#' @examples
-#' \dontrun{
-#' m <- fetch_mapping("yeast", release = 116)
-#' head(m)
-#'
-#' # human release 112 ships two assemblies, so one must be named
-#' fetch_mapping("human", release = 112, assembly = "38")
-#' }
-#' @export
-fetch_mapping <- function(species, release, assembly = NULL, source = NULL,
-                          refresh = FALSE) {
+#' Offline; the URL may need a directory listing, so .annotation_url() builds it.
+#' @noRd
+.annotation_source <- function(species, release, assembly = NULL, source = NULL) {
   # annotation_root and frozen_release carry the relocation as data; human
   # GRCh37 is both relocated and frozen at r87
   species <- resolve_species(species)
@@ -342,16 +316,15 @@ fetch_mapping <- function(species, release, assembly = NULL, source = NULL,
     )
   }
   rel <- if (is.na(row$frozen_release)) row$release else row$frozen_release
+  list(row = row, release = rel, species = species)
+}
 
-  f <- .cache_path("mapping", row$source, species, row$assembly, rel)
-  if (!refresh) {
-    hit <- .cache_get(f, .mapping_memo, c("id", "name", "chr", "biotype", "span"))
-    if (!is.null(hit) && all(is.na(hit$biotype))) hit <- NULL # refetch mappings with entirely missing biotypes
-    if (!is.null(hit)) {
-      return(hit)
-    }
-  }
-
+#' The GTF URL for an .annotation_source() result
+#' @noRd
+.annotation_url <- function(a) {
+  row <- a$row
+  rel <- a$release
+  species <- a$species
   if ("annotation_url" %in% names(row) && !is.na(row$annotation_url) &&
     nzchar(row$annotation_url)) {
     # use the indexed URL for archive-specific filenames
@@ -367,6 +340,50 @@ fetch_mapping <- function(species, release, assembly = NULL, source = NULL,
     if (!length(cand)) stop("no GTF found for ", species, " release ", rel, call. = FALSE)
     url <- paste0(dir_url, cand[1])
   }
+  url
+}
 
-  .cache_put(f, .mapping_memo, stream_gtf(url))
+#' Mapping table for one species and Ensembl release
+#'
+#' Streamed from the Ensembl GTF on first use, then cached, so later calls are
+#' offline. Gene versions are read from GTF attributes or identifier suffixes.
+#'
+#' @param species Species, in any form [resolve_species()] accepts:
+#'   `"homo_sapiens"`, `"Human"` or `"human"`.
+#' @param release Ensembl release number.
+#' @param assembly Assembly suffix as the index records it, e.g. `"38"` or
+#'   `"37"`. Together with `species`, `source` and `release` it selects the index
+#'   row that carries the annotation's FTP root and, where an assembly is
+#'   frozen, the release its annotation actually stopped at.
+#' @param source Annotation family: `"ensembl"`, or `"gencode"` /
+#'   `"gencode_all"` for GENCODE's primary and scaffold-inclusive gene sets.
+#'   Needed only where one release number exists in more than one of them.
+#' @param refresh Re-download even when a cached copy exists.
+#'
+#' @return A data frame of `id`, `name`, `chr`, `start`, `end`, `strand`,
+#'   `span`, `id_version` and `biotype`, suitable as the `mapping` argument of
+#'   [gene_names()]. `span` is the genomic extent from first to last base;
+#'   TPM and FPKM require exonic length. See [stream_gtf()].
+#' @examples
+#' \dontrun{
+#' m <- fetch_mapping("yeast", release = 116)
+#' head(m)
+#'
+#' # human release 112 ships two assemblies, so one must be named
+#' fetch_mapping("human", release = 112, assembly = "38")
+#' }
+#' @export
+fetch_mapping <- function(species, release, assembly = NULL, source = NULL,
+                          refresh = FALSE) {
+  a <- .annotation_source(species, release, assembly, source)
+  f <- .cache_path("mapping", a$row$source, a$species, a$row$assembly, a$release)
+  if (!refresh) {
+    hit <- .cache_get(f, .mapping_memo, c("id", "name", "chr", "biotype", "span"))
+    if (!is.null(hit) && all(is.na(hit$biotype))) hit <- NULL # refetch mappings with entirely missing biotypes
+    if (!is.null(hit)) {
+      return(hit)
+    }
+  }
+
+  .cache_put(f, .mapping_memo, stream_gtf(.annotation_url(a)))
 }
