@@ -50,10 +50,7 @@ annotation. With \code{ids}, a named integer vector the length of \code{ids}, \c
 where nothing matched.
 }
 \description{
-The length FPKM and TPM divide by: the bases covered by any of a gene's
-exons, overlaps counted once. featureCounts reports it as \code{Length}; the
-\code{span} from \code{\link[=fetch_mapping]{fetch_mapping()}} includes introns. Streamed from the same Ensembl
-or GENCODE GTF as \code{\link[=fetch_mapping]{fetch_mapping()}} on first use, then cached.
+Exon-union gene lengths for one species and release
 }
 \examples{
 \dontrun{
