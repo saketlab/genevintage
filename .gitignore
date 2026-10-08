@@ -46,3 +46,4 @@ logos/
 R/vignettes/genevintage.Rmd
 R/vignettes/matrix-rows.Rmd
 R/inst/extdata/gene-rows/
+R/cran/check.log

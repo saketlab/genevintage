@@ -185,3 +185,15 @@ test_that("transcript2gene maps real mouse and chicken transcripts", {
   expect_false(attr(gg, "assembly") == "7")
   expect_equal(gg$gene_name, c("PANX2", "RFKL"))
 })
+
+test_that("transcripts are dated when no source is given", {
+  skip_no_index()
+  # a NULL source once made the index lookup logical(0), so dating was skipped
+  # before detect_release() was ever asked
+  local_mocked_bindings(detect_release = function(ids, species) {
+    data.frame(release = "27", assembly = "38", source = "gencode", dist = 0, feasible = TRUE)
+  })
+  rel <- .detected_transcript_release(c("ENST00000456328.2", "ENST00000450305.2"), "homo_sapiens")
+  expect_equal(rel$source, "gencode")
+  expect_equal(rel$release, "27")
+})

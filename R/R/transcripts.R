@@ -104,7 +104,10 @@ fetch_transcripts <- function(species, release, assembly = NULL, source = NULL,
 #' @noRd
 .detected_transcript_release <- function(ids, species, assembly = NULL, source = NULL) {
   tx <- .tx_fp()
-  if (!any(tx$species == species & (is.null(source) | tx$source == source)) || !.is_transcript(ids)) {
+  # `is.null(source) | tx$source == source` is logical(0) when source is NULL
+  indexed <- tx$species == species
+  if (!is.null(source)) indexed <- indexed & tx$source == source
+  if (!any(indexed) || !.is_transcript(ids)) {
     return(NULL)
   }
   rel <- suppressWarnings(detect_release(ids, species = species))
