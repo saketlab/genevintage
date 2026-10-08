@@ -174,15 +174,13 @@
 #' @return A data frame of `id`, `name`, `chr`, `start`, `end`, `strand`,
 #'   `span`, `id_version` and `biotype`. `span` is the genomic extent from
 #'   first to last base; TPM and FPKM require exonic length.
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' # any Ensembl-shaped GTF; nothing is written to disk
 #' stream_gtf(paste0(
 #'   "https://ftp.ensembl.org/pub/release-116/gtf/",
 #'   "saccharomyces_cerevisiae/",
-#'   "Saccharomyces_cerevisiae.R64-1-1.116.gtf.gz"
+#'   "Saccharomyces_cerevisiae.R64-1-1.63.gtf.gz"
 #' ))
-#' }
 #' @export
 stream_gtf <- function(url, chunk = 100000) {
   # select gene lines by their tab-delimited feature field
@@ -364,14 +362,12 @@ stream_gtf <- function(url, chunk = 100000) {
 #'   `span`, `id_version` and `biotype`, suitable as the `mapping` argument of
 #'   [gene_names()]. `span` is the genomic extent from first to last base;
 #'   TPM and FPKM require exonic length. See [stream_gtf()].
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' m <- fetch_mapping("yeast", release = 116)
 #' head(m)
 #'
 #' # human release 112 ships two assemblies, so one must be named
 #' fetch_mapping("human", release = 112, assembly = "38")
-#' }
 #' @export
 fetch_mapping <- function(species, release, assembly = NULL, source = NULL,
                           refresh = FALSE) {

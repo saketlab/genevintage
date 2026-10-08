@@ -23,3 +23,11 @@ A data frame of \code{id} and \code{xref}.
 Deduplicate gene-level pairs from transcript rows while streaming to limit
 memory to distinct pairs.
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+stream_xrefs(paste0(
+  "https://ftp.ensembl.org/pub/release-116/tsv/saccharomyces_cerevisiae/",
+  "Saccharomyces_cerevisiae.R64-1-1.63.entrez.tsv.gz"
+))
+\dontshow{\}) # examplesIf}
+}

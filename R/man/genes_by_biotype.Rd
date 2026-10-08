@@ -55,11 +55,12 @@ A data frame of \code{id}, \code{name}, \code{chr} and \code{biotype}, shaped as
 Genes of a given biotype, or class of biotypes
 }
 \examples{
-\dontrun{
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+genes_by_biotype(c("miRNA", "snoRNA"), mapping = hs)
+genes_by_biotype("pseudogene", mapping = hs) # a whole class
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 genes_by_biotype("lncRNA", species = "human")
-genes_by_biotype(c("miRNA", "snoRNA"), rownames(counts))
-genes_by_biotype("pseudogene", rownames(counts)) # a whole class
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=gene_biotypes]{gene_biotypes()}} to see the vocabulary first.

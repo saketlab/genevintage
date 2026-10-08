@@ -55,10 +55,10 @@ a GENCODE release are looked up in the newest indexed Ensembl release for
 that species to obtain cross-references between stable identifiers.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 entrez_ids(c("ENSG00000141510", "ENSG00000012048"))
 entrez_ids(c("TP53", "BRCA1"), species = "human")
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=fetch_xrefs]{fetch_xrefs()}}, \code{\link[=gene_names]{gene_names()}}.

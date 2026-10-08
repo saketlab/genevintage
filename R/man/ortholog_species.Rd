@@ -23,7 +23,7 @@ Lists the species with Compara files for a release and division so callers
 can check availability before streaming a pair.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 "mus_musculus" \%in\% ortholog_species(116)
-}
+\dontshow{\}) # examplesIf}
 }

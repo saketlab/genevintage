@@ -158,11 +158,13 @@ LNCRNA_BIOTYPES <- paste0(
 #' @seealso [sex_genes()] for the sex chromosomes.
 #' @export
 #' @examples
-#' \dontrun{
-#' mito_genes(species = "human") # the mitochondrial genes
-#' mt <- mito_genes(rownames(counts)) # just those in your matrix
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' counts <- matrix(1:72, ncol = 2, dimnames = list(hs$id, c("s1", "s2")))
+#' mito_genes(mapping = hs)
+#' mt <- mito_genes(rownames(counts), mapping = hs)
 #' colSums(counts[mt$input, ]) / colSums(counts) # the mitochondrial fraction
-#' }
+#' @examplesIf interactive()
+#' mito_genes(species = "human") # the mitochondrial genes
 mito_genes <- function(ids = NULL, species = NULL, release = NULL,
                        assembly = NULL, source = NULL, mapping = NULL, quiet = FALSE) {
   .gene_subset(ids, species, release, assembly, source, quiet,
@@ -187,10 +189,10 @@ mito_genes <- function(ids = NULL, species = NULL, release = NULL,
 #' @seealso [mito_genes()].
 #' @export
 #' @examples
-#' \dontrun{
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' sex_genes(mapping = hs, which = "Y")
+#' @examplesIf interactive()
 #' sex_genes(species = "human", which = "Y") # Y-linked genes
-#' table(sex_genes(rownames(counts))$chr) # X vs Y in your matrix
-#' }
 sex_genes <- function(ids = NULL, which = NULL, species = NULL, release = NULL,
                       assembly = NULL, source = NULL, mapping = NULL, quiet = FALSE) {
   .gene_subset(ids, species, release, assembly, source, quiet, mapping = mapping, function(sub, all, sp) {
@@ -268,10 +270,10 @@ BIOTYPE_CLASSES <- c("coding", "noncoding", "pseudogene", "immune", "other")
 #' @seealso [genes_by_biotype()], [coding_genes()], [noncoding_genes()].
 #' @export
 #' @examples
-#' \dontrun{
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' gene_biotypes(mapping = hs)
+#' @examplesIf interactive()
 #' gene_biotypes(species = "human")
-#' gene_biotypes(rownames(counts)) # only what your matrix holds
-#' }
 gene_biotypes <- function(ids = NULL, species = NULL, release = NULL,
                           assembly = NULL, source = NULL, mapping = NULL, quiet = FALSE) {
   a <- .locate_annotation(ids, species, release, assembly, source, quiet, mapping)
@@ -298,11 +300,11 @@ gene_biotypes <- function(ids = NULL, species = NULL, release = NULL,
 #' @seealso [gene_biotypes()] to see the vocabulary first.
 #' @export
 #' @examples
-#' \dontrun{
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' genes_by_biotype(c("miRNA", "snoRNA"), mapping = hs)
+#' genes_by_biotype("pseudogene", mapping = hs) # a whole class
+#' @examplesIf interactive()
 #' genes_by_biotype("lncRNA", species = "human")
-#' genes_by_biotype(c("miRNA", "snoRNA"), rownames(counts))
-#' genes_by_biotype("pseudogene", rownames(counts)) # a whole class
-#' }
 genes_by_biotype <- function(biotype, ids = NULL, species = NULL, release = NULL,
                              assembly = NULL, source = NULL, mapping = NULL, quiet = FALSE) {
   if (!is.character(biotype) || !length(biotype)) {
@@ -334,10 +336,10 @@ genes_by_biotype <- function(biotype, ids = NULL, species = NULL, release = NULL
 #' @seealso [noncoding_genes()], [genes_by_biotype()].
 #' @export
 #' @examples
-#' \dontrun{
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' coding_genes(c("TP53", "MALAT1", "XIST"), mapping = hs)
+#' @examplesIf interactive()
 #' nrow(coding_genes(species = "human"))
-#' counts <- counts[coding_genes(rownames(counts))$input, ]
-#' }
 coding_genes <- function(ids = NULL, species = NULL, release = NULL,
                          assembly = NULL, source = NULL, mapping = NULL, quiet = FALSE) {
   genes_by_biotype("coding", ids, species, release, assembly, source, mapping, quiet)
@@ -354,9 +356,8 @@ coding_genes <- function(ids = NULL, species = NULL, release = NULL,
 #' @seealso [coding_genes()], [genes_by_biotype()].
 #' @export
 #' @examples
-#' \dontrun{
-#' table(noncoding_genes(rownames(counts))$biotype)
-#' }
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' table(noncoding_genes(mapping = hs)$biotype)
 noncoding_genes <- function(ids = NULL, species = NULL, release = NULL,
                             assembly = NULL, source = NULL, mapping = NULL, quiet = FALSE) {
   genes_by_biotype("noncoding", ids, species, release, assembly, source, mapping, quiet)
@@ -387,11 +388,13 @@ noncoding_genes <- function(ids = NULL, species = NULL, release = NULL,
 #' @seealso [mito_genes()], [genes_by_biotype()].
 #' @export
 #' @examples
-#' \dontrun{
-#' rb <- ribosomal_genes(rownames(counts))
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' counts <- matrix(1:72, ncol = 2, dimnames = list(hs$id, c("s1", "s2")))
+#' rb <- ribosomal_genes(rownames(counts), mapping = hs)
 #' colSums(counts[rb$input, ]) / colSums(counts) # ribosomal content
+#' ribosomal_genes(mapping = hs, which = "rrna")
+#' @examplesIf interactive()
 #' ribosomal_genes(species = "human", which = "rrna")
-#' }
 ribosomal_genes <- function(ids = NULL, which = c("protein", "rrna", "mito", "all"),
                             species = NULL, release = NULL, assembly = NULL,
                             source = NULL, mapping = NULL, quiet = FALSE) {
@@ -431,10 +434,11 @@ ribosomal_genes <- function(ids = NULL, which = c("protein", "rrna", "mito", "al
 #' @seealso [ribosomal_genes()], [genes_by_biotype()].
 #' @export
 #' @examples
-#' \dontrun{
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' trna_genes(mapping = hs)
+#' @examplesIf interactive()
 #' trna_genes(species = "human") # the mitochondrial tRNAs
 #' table(trna_genes(species = "yeast")$chr) # nuclear, by chromosome
-#' }
 trna_genes <- function(ids = NULL, species = NULL, release = NULL,
                        assembly = NULL, source = NULL, mapping = NULL, quiet = FALSE) {
   .gene_subset(ids, species, release, assembly, source, quiet,
@@ -460,10 +464,10 @@ trna_genes <- function(ids = NULL, species = NULL, release = NULL,
 #' @seealso [ribosomal_genes()] for the ribosome's *proteins*, [trna_genes()].
 #' @export
 #' @examples
-#' \dontrun{
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' rrna_genes(mapping = hs)
+#' @examplesIf interactive()
 #' rrna_genes(species = "human")
-#' table(rrna_genes(rownames(counts))$biotype)
-#' }
 rrna_genes <- function(ids = NULL, species = NULL, release = NULL,
                        assembly = NULL, source = NULL, mapping = NULL, quiet = FALSE) {
   .gene_subset(ids, species, release, assembly, source, quiet,
@@ -490,10 +494,8 @@ rrna_genes <- function(ids = NULL, species = NULL, release = NULL,
 #' @seealso [mito_genes()], [ribosomal_genes()].
 #' @export
 #' @examples
-#' \dontrun{
-#' hb <- hemoglobin_genes(rownames(counts))
-#' colSums(counts[hb$input, ]) / colSums(counts) # haemoglobin fraction
-#' }
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' hemoglobin_genes(mapping = hs)
 hemoglobin_genes <- function(ids = NULL, species = NULL, release = NULL,
                              assembly = NULL, source = NULL, mapping = NULL,
                              quiet = FALSE) {
@@ -524,10 +526,11 @@ hemoglobin_genes <- function(ids = NULL, species = NULL, release = NULL,
 #'   segments, which are a different question.
 #' @export
 #' @examples
-#' \dontrun{
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' mhc_genes(mapping = hs)
+#' @examplesIf interactive()
 #' mhc_genes(species = "human") # coding HLA genes
 #' mhc_genes(species = "mouse") # H2-K1, H2-D1, H2-Aa, ...
-#' }
 mhc_genes <- function(ids = NULL, species = NULL, release = NULL,
                       assembly = NULL, source = NULL, mapping = NULL,
                       quiet = FALSE) {
@@ -564,10 +567,11 @@ mhc_genes <- function(ids = NULL, species = NULL, release = NULL,
 #' @seealso [noncoding_genes()] for every non-coding class, [gene_biotypes()].
 #' @export
 #' @examples
-#' \dontrun{
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' lncrna_genes(mapping = hs)
+#' @examplesIf interactive()
 #' nrow(lncrna_genes(species = "human"))
 #' table(lncrna_genes(species = "zebrafish")$biotype) # antisense and lincRNA
-#' }
 lncrna_genes <- function(ids = NULL, species = NULL, release = NULL,
                          assembly = NULL, source = NULL, mapping = NULL, quiet = FALSE) {
   .gene_subset(ids, species, release, assembly, source, quiet,

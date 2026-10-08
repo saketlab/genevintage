@@ -68,9 +68,9 @@ directly as a lookup. Set it to \code{FALSE} to see one-to-many and many-to-many
 relationships as well.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 orthologs(c("ENSG00000141510", "ENSG00000012048"), to = "mus_musculus")
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=geneid2name]{geneid2name()}} for names within one species.

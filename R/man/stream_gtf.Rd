@@ -24,12 +24,12 @@ Decompresses the stream in chunks and retains \code{gene} lines. If there are
 none, reads the first record per gene from the remaining feature lines.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 # any Ensembl-shaped GTF; nothing is written to disk
 stream_gtf(paste0(
   "https://ftp.ensembl.org/pub/release-116/gtf/",
   "saccharomyces_cerevisiae/",
-  "Saccharomyces_cerevisiae.R64-1-1.116.gtf.gz"
+  "Saccharomyces_cerevisiae.R64-1-1.63.gtf.gz"
 ))
-}
+\dontshow{\}) # examplesIf}
 }

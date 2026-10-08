@@ -1,4 +1,4 @@
-# Unrelease
+# genevintage 0.1.3
 
 - Added `transcript2gene()` to map Ensembl/GENCODE transcript identifiers to
   gene ids or names 
@@ -8,6 +8,8 @@
 - Add support for `gene_lengths()`/`stream_exon_lengths()` to fetch exon-union gene lengths
 - Added `stream_homologies()` to read older Compara dumps that have no
   `is_high_confidence` column; `high_confidence` is then `NA`.
+- `entrez_ids()` no longer fails on identifiers dated before release 85, which
+  has no cross-reference files; it reads them from the newest release.
 
 # genevintage 0.1.2
 

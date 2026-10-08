@@ -42,3 +42,10 @@ symbols are downweighted and Excel-prone date-like symbols are excluded.
 Results below the overlap or score threshold have \code{status = "insufficient"};
 remaining results are \code{"ambiguous"} unless the top candidate meets the margin.
 }
+\examples{
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+hs$species <- "homo_sapiens"
+hs$release <- "116"
+symbols <- c("TP53", "BRCA1", "GAPDH", "ACTB", "XIST", "HBB", "MALAT1", "PTPRC")
+detect_species_names(symbols, build_symbol_index(hs), min_overlap = 5)
+}

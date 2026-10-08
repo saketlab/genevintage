@@ -53,9 +53,9 @@ where nothing matched.
 Exon-union gene lengths for one species and release
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 gene_lengths("human", release = 116, ids = c("ENSG00000141510", "TP53"))
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=fetch_mapping]{fetch_mapping()}} for genomic span, \code{\link[=stream_exon_lengths]{stream_exon_lengths()}}.

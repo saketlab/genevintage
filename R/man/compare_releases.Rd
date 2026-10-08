@@ -47,11 +47,11 @@ Added and removed genes are identified by stable identifier presence.
 Finding a successor to a retired identifier requires a separate lookup.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 d <- compare_releases("human", from = 110, to = 116)
 table(d$change)
 d[d$change == "renamed", ]
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=detect_release]{detect_release()}} to find out which vintages you have.

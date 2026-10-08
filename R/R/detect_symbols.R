@@ -9,6 +9,11 @@
 #' @return A data frame with `species`, `release`, `assembly`, `source`, and
 #'   `symbol`.
 #' @export
+#' @examples
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' hs$species <- "homo_sapiens"
+#' hs$release <- "116"
+#' head(build_symbol_index(hs))
 build_symbol_index <- function(mappings, min_release = NULL) {
   if (is.data.frame(mappings)) mappings <- list(mappings)
   if (!is.list(mappings) || !length(mappings)) stop("mappings must be a non-empty list or data frame.", call. = FALSE)
@@ -44,6 +49,8 @@ build_symbol_index <- function(mappings, min_release = NULL) {
 #' @param source Annotation family.
 #' @return A symbol index suitable for [detect_species_names()].
 #' @export
+#' @examplesIf interactive()
+#' ix <- build_symbol_index_from_gtf("yeast", releases = 116)
 build_symbol_index_from_gtf <- function(species, releases, source = "ensembl") {
   species <- vapply(species, resolve_species, character(1), quiet = TRUE)
   maps <- list()
@@ -76,6 +83,12 @@ build_symbol_index_from_gtf <- function(species, releases, source = "ensembl") {
 #' @return Ranked data frame with `species`, `release`, `score`, `overlap`,
 #'   `margin`, and `status`.
 #' @export
+#' @examples
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' hs$species <- "homo_sapiens"
+#' hs$release <- "116"
+#' symbols <- c("TP53", "BRCA1", "GAPDH", "ACTB", "XIST", "HBB", "MALAT1", "PTPRC")
+#' detect_species_names(symbols, build_symbol_index(hs), min_overlap = 5)
 detect_species_names <- function(symbols, index, min_overlap = 20L,
                                  min_score = 0.25, min_margin = 0.05) {
   symbols <- toupper(trimws(as.character(symbols)))

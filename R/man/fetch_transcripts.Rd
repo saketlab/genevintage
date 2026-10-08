@@ -47,9 +47,9 @@ Streamed from the annotation's GTF on first use, then cached, so later calls
 are offline.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 head(fetch_transcripts("chicken", release = 116))
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=transcript2gene]{transcript2gene()}} to map a set of transcript identifiers.

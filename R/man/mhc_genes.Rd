@@ -55,10 +55,12 @@ exclude regional genes such as \code{B2M}, \code{TAP1}, \code{TAP2} and \code{MI
 Annotations without matching genes return an empty result.
 }
 \examples{
-\dontrun{
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+mhc_genes(mapping = hs)
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 mhc_genes(species = "human") # coding HLA genes
 mhc_genes(species = "mouse") # H2-K1, H2-D1, H2-Aa, ...
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=genes_by_biotype]{genes_by_biotype()}} for the immunoglobulin and T-cell receptor

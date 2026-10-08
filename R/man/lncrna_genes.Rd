@@ -55,10 +55,12 @@ the subset has no lncRNA matches, a message points to
 \code{genes_by_biotype("ncRNA")}.
 }
 \examples{
-\dontrun{
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+lncrna_genes(mapping = hs)
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 nrow(lncrna_genes(species = "human"))
 table(lncrna_genes(species = "zebrafish")$biotype) # antisense and lincRNA
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=noncoding_genes]{noncoding_genes()}} for every non-coding class, \code{\link[=gene_biotypes]{gene_biotypes()}}.

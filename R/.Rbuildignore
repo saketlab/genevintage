@@ -19,4 +19,7 @@
 ^\.Rproj\.user$
 ^doc$
 ^Meta$
-^\.claude$
+(^|/)\.claude$
+^inst/extdata/symbol_index\.rds$
+^\.Rhistory$
+^README\.Rmd$

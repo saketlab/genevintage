@@ -53,11 +53,14 @@ mitochondrial count fractions. Sequence-name matching supports the naming
 conventions of different species.
 }
 \examples{
-\dontrun{
-mito_genes(species = "human") # the mitochondrial genes
-mt <- mito_genes(rownames(counts)) # just those in your matrix
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+counts <- matrix(1:72, ncol = 2, dimnames = list(hs$id, c("s1", "s2")))
+mito_genes(mapping = hs)
+mt <- mito_genes(rownames(counts), mapping = hs)
 colSums(counts[mt$input, ]) / colSums(counts) # the mitochondrial fraction
-}
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+mito_genes(species = "human") # the mitochondrial genes
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=sex_genes]{sex_genes()}} for the sex chromosomes.

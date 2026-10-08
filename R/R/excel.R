@@ -197,7 +197,11 @@ DAMAGE <- list(
 #' @seealso [gene_names()], [gene_ids()], [geneid2name()].
 #' @export
 #' @examples
-#' \dontrun{
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' correct_genenames(c("9-Sep", "1-Dec", "TP53"), mapping = hs)
+#' m <- matrix(1:4, nrow = 2, dimnames = list(c("9-Sep", "TP53"), c("s1", "s2")))
+#' correct_genenames(m, mapping = hs)
+#' @examplesIf interactive()
 #' # release 95 resolves these as SEPT9 and DEC1
 #' correct_genenames(c("9-Sep", "1-Dec", "TP53"), species = "human", release = 95)
 #'
@@ -208,10 +212,6 @@ DAMAGE <- list(
 #' correct_genenames(c("9-Sep", "1-Dec"), species = "human")
 #'
 #' correct_genenames(c("1-Mar", "MTARC1"), species = "human", release = 116)
-#'
-#' m <- matrix(1:4, nrow = 2, dimnames = list(c("9-Sep", "TP53"), c("s1", "s2")))
-#' correct_genenames(m, species = "human", release = 116)
-#' }
 correct_genenames <- function(x, species = NULL, release = NULL, assembly = NULL,
                               source = NULL, mapping = NULL, unique, quiet = FALSE,
                               row_ids = NULL) {

@@ -53,10 +53,11 @@ The RNA components of the ribosome, by biotype: \code{rRNA} in the nucleus and
 \code{genes_by_biotype("rRNA_pseudogene")}.
 }
 \examples{
-\dontrun{
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+rrna_genes(mapping = hs)
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 rrna_genes(species = "human")
-table(rrna_genes(rownames(counts))$biotype)
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=ribosomal_genes]{ribosomal_genes()}} for the ribosome's \emph{proteins}, \code{\link[=trna_genes]{trna_genes()}}.

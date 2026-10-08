@@ -22,3 +22,8 @@ A symbol index suitable for \code{\link[=detect_species_names]{detect_species_na
 \description{
 Fetch GTF mappings and build a symbol index
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+ix <- build_symbol_index_from_gtf("yeast", releases = 116)
+\dontshow{\}) # examplesIf}
+}

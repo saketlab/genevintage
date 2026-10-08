@@ -89,15 +89,13 @@
 #' @param chunk Lines to decompress per iteration.
 #' @return A data frame of `id`, `ortholog_id`, `homology_type`, `identity`,
 #'   `ortholog_identity`, `high_confidence`.
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' url <- paste0(
 #'   "https://ftp.ensembl.org/pub/release-116/tsv/ensembl-compara/",
 #'   "homologies/mus_musculus/",
 #'   "Compara.116.protein_default.homologies.tsv.gz"
 #' )
 #' head(stream_homologies(url, to = "homo_sapiens"))
-#' }
 #' @export
 stream_homologies <- function(url, to, swap = FALSE, chunk = 200000) {
   need <- c(
@@ -234,10 +232,8 @@ stream_homologies <- function(url, to, swap = FALSE, chunk = 200000) {
 #'
 #' @return A character vector of species names.
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' "mus_musculus" %in% ortholog_species(116)
-#' }
 ortholog_species <- function(release, division = "vertebrates") {
   fp <- .fp()
   root <- unique(fp$root[fp$division == division & fp$source == "ensembl"])
@@ -265,11 +261,9 @@ ortholog_species <- function(release, division = "vertebrates") {
 #'
 #' @return A data frame of `id`, `ortholog_id`, `homology_type`, `identity`,
 #'   `ortholog_identity`, `high_confidence`.
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' # first call per pair streams a Compara file and caches it; then offline
 #' head(fetch_orthologs("human", to = "mouse", release = 116))
-#' }
 #' @export
 fetch_orthologs <- function(species, to, release, kind = c("protein", "ncrna"),
                             refresh = FALSE) {
@@ -347,10 +341,8 @@ fetch_orthologs <- function(species, to, release, kind = c("protein", "ncrna"),
 #'
 #' @seealso [geneid2name()] for names within one species.
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' orthologs(c("ENSG00000141510", "ENSG00000012048"), to = "mus_musculus")
-#' }
 orthologs <- function(ids, to, species = NULL, release = NULL, one2one = TRUE,
                       names = TRUE, kind = c("protein", "ncrna"), quiet = FALSE) {
   kind <- match.arg(kind)

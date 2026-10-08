@@ -4,11 +4,11 @@
 \name{genevintage-package}
 \alias{genevintage}
 \alias{genevintage-package}
-\title{genevintage: Identify the Build Annotation Associated with a Set of Gene Identifiers}
+\title{genevintage: Detect Annotation Releases and Repair Gene Names}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Genevintage detects the species from the identifier prefixes and ranks the 'Ensembl' or 'GENCODE' releases consistent with the set, then converts the identifiers to gene names. It also supports methods to retrieve gene by class (mitochondrial, sex-linked, protein-coding, ribosomal, transfer RNA, long non-coding RNA) and mapping genes to their orthologs in another species.
+Detects the species and the 'Ensembl' \url{https://www.ensembl.org} or 'GENCODE' \url{https://www.gencodegenes.org} annotation release associated with a set of gene or transcript identifiers by scoring them against a bundled fingerprint of each release. Identifiers are then converted to gene names using the matching release. Gene symbols that spreadsheet software turned into dates or numbers ('SEPT9' to '9-Sep') are restored to the spelling of the chosen release. Also retrieves genes by class (mitochondrial, sex-linked, protein-coding, ribosomal, transfer RNA, long non-coding RNA), exon-union gene lengths, 'Entrez' cross-references, and orthologs in another species from 'Ensembl Compara'.
 }
 \seealso{
 Useful links:

@@ -53,10 +53,12 @@ and plant annotations include the nuclear ones. The \code{chr} and \code{biotype
 columns say which kind each row is.
 }
 \examples{
-\dontrun{
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+trna_genes(mapping = hs)
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 trna_genes(species = "human") # the mitochondrial tRNAs
 table(trna_genes(species = "yeast")$chr) # nuclear, by chromosome
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=ribosomal_genes]{ribosomal_genes()}}, \code{\link[=genes_by_biotype]{genes_by_biotype()}}.

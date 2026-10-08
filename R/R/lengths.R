@@ -11,20 +11,20 @@
 #' @noRd
 .exon_union_length <- function(gene, start, end) {
   if (!length(gene)) {
-    return(setNames(integer(), character()))
+    return(stats::setNames(integer(), character()))
   }
   o <- order(gene, start, end, method = "radix")
   g <- gene[o]
   s <- start[o]
   # a new block starts at each gene, or at an exon past every end seen so far
-  reach <- ave(end[o], g, FUN = cummax)
+  reach <- stats::ave(end[o], g, FUN = cummax)
   first <- c(TRUE, g[-1L] != g[-length(g)])
   new_block <- first | s > c(-Inf, reach[-length(reach)])
   # reach at a block's last exon is that block's end
   last <- c(which(new_block)[-1L] - 1L, length(s))
   out <- rowsum(reach[last] - s[new_block] + 1, g[new_block], reorder = FALSE)[, 1]
   ids <- unique(gene)
-  setNames(as.integer(out[ids]), ids)
+  stats::setNames(as.integer(out[ids]), ids)
 }
 
 #' Exon-union lengths from a GTF, streamed without writing it to disk
@@ -35,14 +35,12 @@
 #' @param url A `.gtf.gz` URL.
 #' @param chunk Lines to decompress per iteration.
 #' @return A data frame of `id` and `length` (bases).
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' stream_exon_lengths(paste0(
 #'   "https://ftp.ensembl.org/pub/release-116/gtf/",
 #'   "saccharomyces_cerevisiae/",
-#'   "Saccharomyces_cerevisiae.R64-1-1.116.gtf.gz"
+#'   "Saccharomyces_cerevisiae.R64-1-1.63.gtf.gz"
 #' ))
-#' }
 #' @export
 stream_exon_lengths <- function(url, chunk = 100000) {
   # shrink lines as they stream; the attribute column is most of each line
@@ -78,10 +76,8 @@ stream_exon_lengths <- function(url, chunk = 100000) {
 #'   annotation. With `ids`, a named integer vector the length of `ids`, `NA`
 #'   where nothing matched.
 #' @seealso [fetch_mapping()] for genomic span, [stream_exon_lengths()].
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' gene_lengths("human", release = 116, ids = c("ENSG00000141510", "TP53"))
-#' }
 #' @export
 gene_lengths <- function(species, release, ids = NULL, assembly = NULL,
                          source = NULL, refresh = FALSE) {
@@ -104,5 +100,5 @@ gene_lengths <- function(species, release, ids = NULL, assembly = NULL,
     m <- m[!m$name %in% shared, ]
     hit[miss] <- match(.bare(m$id[match(ids[miss], m$name)]), bare)
   }
-  setNames(tab$length[hit], ids)
+  stats::setNames(tab$length[hit], ids)
 }

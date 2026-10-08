@@ -55,10 +55,11 @@ and C. elegans X. Annotations without recognised sex chromosomes return
 no rows.
 }
 \examples{
-\dontrun{
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+sex_genes(mapping = hs, which = "Y")
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 sex_genes(species = "human", which = "Y") # Y-linked genes
-table(sex_genes(rownames(counts))$chr) # X vs Y in your matrix
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=mito_genes]{mito_genes()}}.

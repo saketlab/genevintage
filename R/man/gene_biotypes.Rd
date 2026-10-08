@@ -48,10 +48,11 @@ Use this to see what is there before filtering: the vocabulary differs by
 species and drifts between releases.
 }
 \examples{
-\dontrun{
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+gene_biotypes(mapping = hs)
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 gene_biotypes(species = "human")
-gene_biotypes(rownames(counts)) # only what your matrix holds
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=genes_by_biotype]{genes_by_biotype()}}, \code{\link[=coding_genes]{coding_genes()}}, \code{\link[=noncoding_genes]{noncoding_genes()}}.

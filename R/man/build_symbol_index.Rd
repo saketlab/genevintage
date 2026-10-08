@@ -23,3 +23,9 @@ A data frame with \code{species}, \code{release}, \code{assembly}, \code{source}
 \description{
 Build a compact species/release gene-symbol index from GTF mappings
 }
+\examples{
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+hs$species <- "homo_sapiens"
+hs$release <- "116"
+head(build_symbol_index(hs))
+}

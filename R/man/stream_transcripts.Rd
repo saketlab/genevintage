@@ -25,13 +25,13 @@ chunk without them is read from its exon and CDS lines, which carry the same
 \code{transcript_id}, \code{gene_id} and \code{gene_name}; duplicates are dropped.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 stream_transcripts(paste0(
   "https://ftp.ensembl.org/pub/release-116/gtf/",
   "saccharomyces_cerevisiae/",
-  "Saccharomyces_cerevisiae.R64-1-1.116.gtf.gz"
+  "Saccharomyces_cerevisiae.R64-1-1.63.gtf.gz"
 ))
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=fetch_transcripts]{fetch_transcripts()}} for the cached table of one release.

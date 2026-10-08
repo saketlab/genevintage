@@ -50,10 +50,11 @@ their own biotypes; ask for \code{"immune"} through \code{\link[=genes_by_biotyp
 them.
 }
 \examples{
-\dontrun{
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+coding_genes(c("TP53", "MALAT1", "XIST"), mapping = hs)
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 nrow(coding_genes(species = "human"))
-counts <- counts[coding_genes(rownames(counts))$input, ]
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=noncoding_genes]{noncoding_genes()}}, \code{\link[=genes_by_biotype]{genes_by_biotype()}}.

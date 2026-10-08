@@ -17,10 +17,11 @@
 #' @seealso [gene_names()] for the forward direction, [entrez_ids()].
 #' @export
 #' @examples
-#' \dontrun{
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' gene_ids(c("TP53", "BRCA1"), mapping = hs)
+#' @examplesIf interactive()
 #' gene_ids(c("TP53", "BRCA1"), species = "human")
 #' gene_ids(c("7157", "672"), from = "entrez", species = "human")
-#' }
 gene_ids <- function(x, from = c("auto", "name", "entrez"), species = NULL,
                      release = NULL, assembly = NULL, source = NULL,
                      mapping = NULL, quiet = FALSE) {
@@ -107,10 +108,8 @@ gene_ids <- function(x, from = c("auto", "name", "entrez"), species = NULL,
 #' @seealso [gene_names()] for one value per input.
 #' @export
 #' @examples
-#' \dontrun{
-#' ann <- annotate_genes(rownames(counts))
-#' res$biotype <- ann$biotype[match(rownames(res), ann$input)]
-#' }
+#' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+#' annotate_genes(c("TP53", "ENSG00000198804", "MALAT1"), mapping = hs)
 annotate_genes <- function(ids, species = NULL, release = NULL, assembly = NULL,
                            source = NULL, mapping = NULL, quiet = FALSE) {
   ids <- .as_ids(ids)

@@ -13,6 +13,11 @@
 #' @param chunk Lines to decompress per iteration.
 #' @return A data frame of `id` and `xref`.
 #' @export
+#' @examplesIf interactive()
+#' stream_xrefs(paste0(
+#'   "https://ftp.ensembl.org/pub/release-116/tsv/saccharomyces_cerevisiae/",
+#'   "Saccharomyces_cerevisiae.R64-1-1.63.entrez.tsv.gz"
+#' ))
 stream_xrefs <- function(url, db = "EntrezGene", chunk = 200000) {
   seen <- character()
   k <- .stream_filter(url, function(x) {
@@ -57,10 +62,8 @@ stream_xrefs <- function(url, db = "EntrezGene", chunk = 200000) {
 #' @return A data frame of `id` and `xref`, one row per distinct pair.
 #' @seealso [entrez_ids()] for the lookup this feeds.
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' head(fetch_xrefs("yeast", release = 116))
-#' }
 fetch_xrefs <- function(species, release, db = "entrez", refresh = FALSE) {
   species <- resolve_species(species)
   release <- as.character(release)
@@ -118,11 +121,9 @@ fetch_xrefs <- function(species, release, db = "entrez", refresh = FALSE) {
 #' @return A data frame of `input`, `id`, `name` and `entrez`, one row per pair.
 #' @seealso [fetch_xrefs()], [gene_names()].
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' entrez_ids(c("ENSG00000141510", "ENSG00000012048"))
 #' entrez_ids(c("TP53", "BRCA1"), species = "human")
-#' }
 entrez_ids <- function(ids, species = NULL, release = NULL, assembly = NULL,
                        source = NULL, mapping = NULL, quiet = FALSE) {
   loc <- .locate_annotation(ids, species, release, assembly, source, quiet,
@@ -135,8 +136,9 @@ entrez_ids <- function(ids, species = NULL, release = NULL, assembly = NULL,
       entrez = character(), stringsAsFactors = FALSE
     ))
   }
-  # a GENCODE vintage has no cross-reference file of its own
-  rel <- if (identical(loc$source, "ensembl")) {
+  # a GENCODE vintage has no cross-reference file of its own, and Ensembl
+  # publishes tsv/ only from release 85; stable ids persist into the newest
+  rel <- if (identical(loc$source, "ensembl") && .rel_num(loc$release) >= 85) {
     loc$release
   } else {
     .newest_release(loc$species)

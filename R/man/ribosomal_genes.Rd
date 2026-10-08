@@ -66,11 +66,14 @@ exclude pseudogenes and lncRNAs. A name rule also excludes S6 kinases
 (\code{RPS6KA1} to \code{RPS6KL1}) and \code{RPS19BP1}.
 }
 \examples{
-\dontrun{
-rb <- ribosomal_genes(rownames(counts))
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+counts <- matrix(1:72, ncol = 2, dimnames = list(hs$id, c("s1", "s2")))
+rb <- ribosomal_genes(rownames(counts), mapping = hs)
 colSums(counts[rb$input, ]) / colSums(counts) # ribosomal content
+ribosomal_genes(mapping = hs, which = "rrna")
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 ribosomal_genes(species = "human", which = "rrna")
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=mito_genes]{mito_genes()}}, \code{\link[=genes_by_biotype]{genes_by_biotype()}}.

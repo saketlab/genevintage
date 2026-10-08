@@ -22,11 +22,11 @@ Keeps only \code{exon} lines. Gene ids are read from the \code{gene_id} attribut
 GENCODE GTF yields versioned ids, as its \code{gene} lines do in \code{\link[=stream_gtf]{stream_gtf()}}.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 stream_exon_lengths(paste0(
   "https://ftp.ensembl.org/pub/release-116/gtf/",
   "saccharomyces_cerevisiae/",
-  "Saccharomyces_cerevisiae.R64-1-1.116.gtf.gz"
+  "Saccharomyces_cerevisiae.R64-1-1.63.gtf.gz"
 ))
-}
+\dontshow{\}) # examplesIf}
 }

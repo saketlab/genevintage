@@ -43,8 +43,8 @@ offline. Compara is Ensembl's, so \code{release} is an Ensembl release even when
 the identifiers came from GENCODE.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 # first call per pair streams a Compara file and caches it; then offline
 head(fetch_orthologs("human", to = "mouse", release = 116))
-}
+\dontshow{\}) # examplesIf}
 }

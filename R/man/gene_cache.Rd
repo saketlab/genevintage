@@ -32,9 +32,11 @@ Interrupted writes leave \code{.rds.tmp} files, listed as \code{partial} and eli
 for removal.
 }
 \examples{
+# a scratch cache, so the example leaves yours alone
+old <- Sys.getenv("R_USER_CACHE_DIR")
+Sys.setenv(R_USER_CACHE_DIR = tempfile())
 gene_cache() # what is cached, and how large
-\dontrun{
 gene_cache(clear = 90) # drop anything untouched for 90 days
 gene_cache(clear = TRUE) # drop all of it
-}
+Sys.setenv(R_USER_CACHE_DIR = old)
 }

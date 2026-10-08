@@ -55,10 +55,8 @@ Requiring \code{protein_coding} also excludes haemoglobin pseudogenes such as
 \code{HBAP1}, \code{HBBP1} and \code{HBZP1}.
 }
 \examples{
-\dontrun{
-hb <- hemoglobin_genes(rownames(counts))
-colSums(counts[hb$input, ]) / colSums(counts) # haemoglobin fraction
-}
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+hemoglobin_genes(mapping = hs)
 }
 \seealso{
 \code{\link[=mito_genes]{mito_genes()}}, \code{\link[=ribosomal_genes]{ribosomal_genes()}}.

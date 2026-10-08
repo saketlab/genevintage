@@ -54,10 +54,12 @@ Symbols and Entrez identifiers can each match multiple genes, so the table
 returns every match. Unmatched inputs are retained with \code{id = NA}.
 }
 \examples{
-\dontrun{
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+gene_ids(c("TP53", "BRCA1"), mapping = hs)
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 gene_ids(c("TP53", "BRCA1"), species = "human")
 gene_ids(c("7157", "672"), from = "entrez", species = "human")
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=gene_names]{gene_names()}} for the forward direction, \code{\link[=entrez_ids]{entrez_ids()}}.

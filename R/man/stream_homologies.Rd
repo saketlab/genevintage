@@ -28,12 +28,12 @@ Filters the Compara stream in chunks to retain orthologs for the requested
 target species, limiting memory to the selected pair.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 url <- paste0(
   "https://ftp.ensembl.org/pub/release-116/tsv/ensembl-compara/",
   "homologies/mus_musculus/",
   "Compara.116.protein_default.homologies.tsv.gz"
 )
 head(stream_homologies(url, to = "homo_sapiens"))
-}
+\dontshow{\}) # examplesIf}
 }

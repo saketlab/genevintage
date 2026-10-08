@@ -43,11 +43,11 @@ Streamed from the Ensembl GTF on first use, then cached, so later calls are
 offline. Gene versions are read from GTF attributes or identifier suffixes.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 m <- fetch_mapping("yeast", release = 116)
 head(m)
 
 # human release 112 ships two assemblies, so one must be named
 fetch_mapping("human", release = 112, assembly = "38")
-}
+\dontshow{\}) # examplesIf}
 }

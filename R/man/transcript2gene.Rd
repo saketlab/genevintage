@@ -78,10 +78,15 @@ needs this: GRCg7b (release 107 on) renumbered every identifier, so GRCg6a
 transcripts only map at release 106 or earlier.
 }
 \examples{
-\dontrun{
+tx <- data.frame(
+  transcript_id = c("ENST00000269305", "ENST00000357654"),
+  id = c("ENSG00000141510", "ENSG00000012048"), name = c("TP53", "BRCA1")
+)
+transcript2gene(c("ENST00000269305.9", "ENST00000357654.9"), mapping = tx)
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 transcript2gene(c("ENSMUST00000178537.2", "ENSMUST00000178862.2"))
 transcript2gene(c("ENSGALT00000000003", "ENSGALT00000000004"))
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=aggregate_transcripts]{aggregate_transcripts()}} to sum a transcript-level matrix to genes.

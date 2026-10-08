@@ -55,10 +55,8 @@ Unmatched inputs are retained with \code{NA} columns. Names matching several
 genes yield a row for each.
 }
 \examples{
-\dontrun{
-ann <- annotate_genes(rownames(counts))
-res$biotype <- ann$biotype[match(rownames(res), ann$input)]
-}
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+annotate_genes(c("TP53", "ENSG00000198804", "MALAT1"), mapping = hs)
 }
 \seealso{
 \code{\link[=gene_names]{gene_names()}} for one value per input.

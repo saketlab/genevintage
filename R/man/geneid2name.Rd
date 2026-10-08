@@ -71,17 +71,16 @@ once, then cached) and converts. Identifiers with no gene name are returned
 unchanged.
 }
 \examples{
-\dontrun{
-ids <- c("ENSG00000141510", "ENSG00000284733", "ENSG00000012048")
-geneid2name(ids)
+# an excerpt of human Ensembl 116; drop `mapping` to detect and fetch the real one
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+ids <- c("ENSG00000141510", "ENSG00000284616", "ENSG00000012048")
+geneid2name(ids, mapping = hs) # the unnamed lncRNA keeps its id
 
 m <- matrix(1:6, nrow = 3, dimnames = list(ids, c("s1", "s2")))
-geneid2name(m)
-#>                 s1 s2
-#> TP53             1  4
-#> ENSG00000284733  2  5
-#> BRCA1            3  6
-}
+geneid2name(m, mapping = hs)
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+geneid2name(ids) # species and release detected, then fetched
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=detect_species]{detect_species()}}, \code{\link[=detect_release]{detect_release()}}, \code{\link[=gene_names]{gene_names()}}.

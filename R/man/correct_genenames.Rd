@@ -91,7 +91,11 @@ dimensions, row order and other attributes are preserved. Call
 and \code{unresolved} attributes.
 }
 \examples{
-\dontrun{
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+correct_genenames(c("9-Sep", "1-Dec", "TP53"), mapping = hs)
+m <- matrix(1:4, nrow = 2, dimnames = list(c("9-Sep", "TP53"), c("s1", "s2")))
+correct_genenames(m, mapping = hs)
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 # release 95 resolves these as SEPT9 and DEC1
 correct_genenames(c("9-Sep", "1-Dec", "TP53"), species = "human", release = 95)
 
@@ -102,10 +106,7 @@ correct_genenames(c("9-Sep", "1-Dec", "TP53"), species = "human", release = 116)
 correct_genenames(c("9-Sep", "1-Dec"), species = "human")
 
 correct_genenames(c("1-Mar", "MTARC1"), species = "human", release = 116)
-
-m <- matrix(1:4, nrow = 2, dimnames = list(c("9-Sep", "TP53"), c("s1", "s2")))
-correct_genenames(m, species = "human", release = 116)
-}
+\dontshow{\}) # examplesIf}
 }
 \references{
 Ziemann M, Eren Y, El-Osta A (2016). Gene name errors are widespread in the

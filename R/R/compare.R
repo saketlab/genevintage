@@ -18,12 +18,10 @@
 #'   or `"retyped"`), `name_from`, `name_to`, `biotype_from` and `biotype_to`.
 #' @seealso [detect_release()] to find out which vintages you have.
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' d <- compare_releases("human", from = 110, to = 116)
 #' table(d$change)
 #' d[d$change == "renamed", ]
-#' }
 compare_releases <- function(species, from, to, assembly = NULL, source = NULL,
                              quiet = FALSE) {
   species <- resolve_species(species)

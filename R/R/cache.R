@@ -62,11 +62,13 @@
 #'   is `NA` for a mapping. Zero rows when nothing is cached.
 #'
 #' @examples
+#' # a scratch cache, so the example leaves yours alone
+#' old <- Sys.getenv("R_USER_CACHE_DIR")
+#' Sys.setenv(R_USER_CACHE_DIR = tempfile())
 #' gene_cache() # what is cached, and how large
-#' \dontrun{
 #' gene_cache(clear = 90) # drop anything untouched for 90 days
 #' gene_cache(clear = TRUE) # drop all of it
-#' }
+#' Sys.setenv(R_USER_CACHE_DIR = old)
 #' @export
 gene_cache <- function(clear = FALSE) {
   d <- .cache_dir()

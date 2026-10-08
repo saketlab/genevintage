@@ -21,14 +21,12 @@ TRANSCRIPT_MAX_DIST <- 1
 #'   name, `NA` where the annotation gives none). Identifiers keep whatever
 #'   version suffix the GTF writes: GENCODE versions them, Ensembl does not.
 #' @seealso [fetch_transcripts()] for the cached table of one release.
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' stream_transcripts(paste0(
 #'   "https://ftp.ensembl.org/pub/release-116/gtf/",
 #'   "saccharomyces_cerevisiae/",
-#'   "Saccharomyces_cerevisiae.R64-1-1.116.gtf.gz"
+#'   "Saccharomyces_cerevisiae.R64-1-1.63.gtf.gz"
 #' ))
-#' }
 #' @export
 stream_transcripts <- function(url, chunk = 100000) {
   # shrink lines as they stream; the attribute column is most of each line
@@ -62,10 +60,8 @@ stream_transcripts <- function(url, chunk = 100000) {
 #' @return A data frame of `transcript_id`, `id` and `name`, as
 #'   [stream_transcripts()] returns it.
 #' @seealso [transcript2gene()] to map a set of transcript identifiers.
-#' @examples
-#' \dontrun{
+#' @examplesIf interactive()
 #' head(fetch_transcripts("chicken", release = 116))
-#' }
 #' @export
 fetch_transcripts <- function(species, release, assembly = NULL, source = NULL,
                               refresh = FALSE) {
@@ -204,10 +200,14 @@ fetch_transcripts <- function(species, release, assembly = NULL, source = NULL,
 #' @seealso [aggregate_transcripts()] to sum a transcript-level matrix to genes.
 #' @export
 #' @examples
-#' \dontrun{
+#' tx <- data.frame(
+#'   transcript_id = c("ENST00000269305", "ENST00000357654"),
+#'   id = c("ENSG00000141510", "ENSG00000012048"), name = c("TP53", "BRCA1")
+#' )
+#' transcript2gene(c("ENST00000269305.9", "ENST00000357654.9"), mapping = tx)
+#' @examplesIf interactive()
 #' transcript2gene(c("ENSMUST00000178537.2", "ENSMUST00000178862.2"))
 #' transcript2gene(c("ENSGALT00000000003", "ENSGALT00000000004"))
-#' }
 transcript2gene <- function(ids, species = NULL, release = NULL, assembly = NULL,
                             source = NULL, mapping = NULL, quiet = FALSE) {
   ids <- .as_ids(ids)
@@ -333,10 +333,6 @@ transcript2gene <- function(ids, species = NULL, release = NULL, assembly = NULL
 #'   c("s1", "s2")
 #' ))
 #' aggregate_transcripts(m, mapping = tx)
-#'
-#' \dontrun{
-#' aggregate_transcripts(salmon_counts) # species and release from the ids
-#' }
 aggregate_transcripts <- function(x, species = NULL, release = NULL, assembly = NULL,
                                   source = NULL, mapping = NULL, row_ids = NULL,
                                   label = c("id", "name"),

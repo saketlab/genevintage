@@ -88,10 +88,6 @@ m <- matrix(1:6, nrow = 3, dimnames = list(
   c("s1", "s2")
 ))
 aggregate_transcripts(m, mapping = tx)
-
-\dontrun{
-aggregate_transcripts(salmon_counts) # species and release from the ids
-}
 }
 \seealso{
 \code{\link[=transcript2gene]{transcript2gene()}}, \code{\link[=geneid2name]{geneid2name()}}.

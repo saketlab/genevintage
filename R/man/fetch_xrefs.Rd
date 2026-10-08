@@ -26,9 +26,9 @@ Streams the cross-reference TSV Ensembl publishes for a species and release,
 keeps the gene-level pairs and caches them, so later calls are offline.
 }
 \examples{
-\dontrun{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 head(fetch_xrefs("yeast", release = 116))
-}
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=entrez_ids]{entrez_ids()}} for the lookup this feeds.

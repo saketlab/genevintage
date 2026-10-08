@@ -49,9 +49,8 @@ the rest. Pseudogenes are a separate class; ask for \code{"pseudogene"} through
 \code{\link[=genes_by_biotype]{genes_by_biotype()}} when you want them.
 }
 \examples{
-\dontrun{
-table(noncoding_genes(rownames(counts))$biotype)
-}
+hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
+table(noncoding_genes(mapping = hs)$biotype)
 }
 \seealso{
 \code{\link[=coding_genes]{coding_genes()}}, \code{\link[=genes_by_biotype]{genes_by_biotype()}}.
