@@ -30,3 +30,19 @@ R/tests/testthat/Rplots.pdf
 .DS_Store
 
 
+
+R/data-raw/
+R/inst/extdata/symbol-index-parts/
+R/tests/testthat/fixtures/
+R/tests/testthat/transcripts/
+R/tests/testthat/golden/
+R/tests/testthat/_snaps/
+R/cran/last-check.dcf
+.claude/
+.context/
+CLAUDE.md
+logos/
+*.Rproj
+R/vignettes/genevintage.Rmd
+R/vignettes/matrix-rows.Rmd
+R/inst/extdata/gene-rows/

@@ -23,3 +23,7 @@
 ^inst/extdata/symbol_index\.rds$
 ^\.Rhistory$
 ^README\.Rmd$
+^cran$
+^vignettes/genevintage\.Rmd$
+^vignettes/matrix-rows\.Rmd$
+^inst/extdata/gene-rows$

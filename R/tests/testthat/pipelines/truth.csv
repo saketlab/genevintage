@@ -1,0 +1,6 @@
+"file","species","source","release","ensembl","n","versioned"
+"recount3_human_G026.txt.gz","homo_sapiens","gencode_all","26","88","63856","1"
+"recount3_human_G029.txt.gz","homo_sapiens","gencode_all","29","94","64837","1"
+"recount3_mouse_M023.txt.gz","mus_musculus","gencode","M23","98","55421","1"
+"gdc_gencode_v22.txt.gz","homo_sapiens","gencode","22","79","60483","1"
+"gse52529_gencode_v17.txt.gz","homo_sapiens","gencode","17","72","47192","1"
