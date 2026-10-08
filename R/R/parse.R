@@ -5,15 +5,16 @@ ENS_RX <- "^(ENS[A-Z]{0,4}?)([EGTPR])(\\d{11})(?:\\.(\\d+))?(_[A-Z0-9_]+)?$"
 #' Identifier schemes, most specific first
 #' @noRd
 SCHEMES <- c(
-  ensembl  = ENS_RX,
-  flybase  = "^FBgn\\d{7}$",
+  ensembl = ENS_RX,
+  flybase = "^FBgn\\d{7}$",
+  flybase_tx = "^FBtr\\d{7}$",
   wormbase = "^WBGene\\d{8}$",
-  tair     = "^AT[1-5CM]G\\d{5}(\\.\\d+)?$",
-  sgd      = "^(Y[A-P][LR]\\d{3}[WC](-[A-Z])?|Q0\\d{3,4}|R\\d{4}[WC])$",
-  xenbase  = "^Xetrov\\d+.*$",
-  refseq   = "^[NX][MRP]_\\d+(\\.\\d+)?$",
-  locus    = "^LOC\\d+$",
-  entrez   = "^\\d+$"
+  tair = "^AT[1-5CM]G\\d{5}(\\.\\d+)?$",
+  sgd = "^(Y[A-P][LR]\\d{3}[WC](-[A-Z])?|Q0\\d{3,4}|R\\d{4}[WC])$",
+  xenbase = "^Xetrov\\d+.*$",
+  refseq = "^[NX][MRP]_\\d+(\\.\\d+)?$",
+  locus = "^LOC\\d+$",
+  entrez = "^\\d+$"
 )
 
 #' Identifiers as a character vector, or a clear refusal
@@ -104,6 +105,12 @@ SCHEMES <- c(
 #' Bare identifier: decoration and any version suffix removed
 #' @noRd
 .bare <- function(x) sub("\\.\\d+(_[A-Z0-9_]+)?$", "", .normalize_id(x), perl = TRUE)
+
+#' Identifier without its version, keeping a tag such as GENCODE's _PAR_Y
+#' @noRd
+.unversioned <- function(x) sub("\\.\\d+(_[A-Z0-9_]+)?$", "\\1", .normalize_id(x), perl = TRUE)
+
+TRANSCRIPT_RX <- sprintf("^ENS[A-Z]{0,4}?T\\d{11}$|%s", SCHEMES[["flybase_tx"]])
 
 #' Which identifier scheme a vector of IDs uses
 #'

@@ -13,6 +13,7 @@
 ^tests/testthat/golden$
 ^tests/testthat/pipelines$
 ^tests/testthat/truth$
+^tests/testthat/transcripts$
 ^tests/testthat/vocab$
 ^.*\.Rproj$
 ^\.Rproj\.user$

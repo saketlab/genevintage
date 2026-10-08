@@ -1,6 +1,13 @@
 # Unrelease
 
+- Added `transcript2gene()` to map Ensembl/GENCODE transcript identifiers to
+  gene ids or names 
+- Added `aggregate_transcripts()` to sum a transcript-level matrix 
+  to gene level
+- `detect_species()` and `detect_release()` accept transcript identifiers
 - Add support for `gene_lengths()`/`stream_exon_lengths()` to fetch exon-union gene lengths
+- Added `stream_homologies()` to read older Compara dumps that have no
+  `is_high_confidence` column; `high_confidence` is then `NA`.
 
 # genevintage 0.1.2
 

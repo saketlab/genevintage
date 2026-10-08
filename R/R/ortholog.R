@@ -102,9 +102,10 @@
 stream_homologies <- function(url, to, swap = FALSE, chunk = 200000) {
   need <- c(
     "gene_stable_id", "homology_type", "homology_gene_stable_id",
-    "homology_species", "identity", "homology_identity",
-    "is_high_confidence"
+    "homology_species", "identity", "homology_identity"
   )
+  # Compara ~86-89 lacks the confidence flag; it reads NA
+  flag <- "is_high_confidence"
   # cheap fixed-string prefilter before the far more expensive split
   tag <- paste0("\t", to, "\t")
   j <- NULL
@@ -119,7 +120,7 @@ stream_homologies <- function(url, to, swap = FALSE, chunk = 200000) {
           call. = FALSE
         )
       }
-      j <<- match(need, cols)
+      j <<- stats::setNames(match(c(need, flag), cols), c(need, flag))
       nc <<- length(cols)
       x <- x[-1]
     }
@@ -146,7 +147,7 @@ stream_homologies <- function(url, to, swap = FALSE, chunk = 200000) {
     homology_type     = if (swap) .swap_homology(f[, j[2]]) else f[, j[2]],
     identity          = num(f[, j[p[3]]]),
     ortholog_identity = num(f[, j[p[4]]]),
-    high_confidence   = f[, j[7]] == "1",
+    high_confidence   = if (is.na(j[[flag]])) NA else f[, j[[flag]]] == "1",
     stringsAsFactors  = FALSE
   )
   # paralogs share the file; only orthology crosses species

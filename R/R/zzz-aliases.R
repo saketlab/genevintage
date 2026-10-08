@@ -157,3 +157,19 @@ StreamXrefs <- stream_xrefs
 #' @rdname trna_genes
 #' @export
 tRNAGenes <- trna_genes
+
+#' @rdname aggregate_transcripts
+#' @export
+AggregateTranscripts <- aggregate_transcripts
+
+#' @rdname fetch_transcripts
+#' @export
+FetchTranscripts <- fetch_transcripts
+
+#' @rdname stream_transcripts
+#' @export
+StreamTranscripts <- stream_transcripts
+
+#' @rdname transcript2gene
+#' @export
+Transcript2Gene <- transcript2gene

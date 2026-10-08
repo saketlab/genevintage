@@ -2,11 +2,13 @@
 #
 #   mapping-<source>-<species>-<assembly>-<release>.rds
 #   lengths-<source>-<species>-<assembly>-<release>.rds
+#   transcripts-<source>-<species>-<assembly>-<release>.rds
 #   orthologs-<species>-<to>-<release>-<homology>.rds
 #   xrefs-<db>-<species>-<assembly>-<release>.rds
 .CACHE_FIELDS <- list(
   mapping = c("source", "species", "assembly", "release"),
   lengths = c("source", "species", "assembly", "release"),
+  transcripts = c("source", "species", "assembly", "release"),
   orthologs = c("species", "to", "release", "homology"),
   xrefs = c("db", "species", "assembly", "release")
 )
@@ -95,7 +97,10 @@ gene_cache <- function(clear = FALSE) {
     unlink(gone)
     # the in-session memos hold the same tables by full path; leaving them would
     # keep serving what was just deleted
-    for (memo in list(.mapping_memo, .ortholog_memo, .xref_memo)) {
+    for (memo in list(
+      .mapping_memo, .ortholog_memo, .xref_memo, .lengths_memo,
+      .transcript_memo
+    )) {
       rm(list = intersect(gone, ls(memo)), envir = memo)
     }
     # leave no empty directory behind when the last file goes

@@ -17,6 +17,7 @@ R/doc/
 R/Meta/
 
 R/inst/extdata/parts/
+R/data-raw/tx-parts/
 R/inst/extdata/parts_gencode/
 R/inst/extdata/symbol-index-parts/
 

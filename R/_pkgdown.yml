@@ -68,6 +68,12 @@ reference:
   - annotate_genes
   - correct_genenames
 
+- title: Transcripts
+  desc: Transcript identifiers to their genes, and transcript counts to gene counts
+  contents:
+  - transcript2gene
+  - aggregate_transcripts
+
 - title: Dating
   desc: >
     Which species and which release a set of identifiers came from, as a ranked
@@ -125,6 +131,8 @@ reference:
   - fetch_orthologs
   - stream_gtf
   - stream_exon_lengths
+  - fetch_transcripts
+  - stream_transcripts
   - build_symbol_index
   - build_symbol_index_from_gtf
   - stream_homologies

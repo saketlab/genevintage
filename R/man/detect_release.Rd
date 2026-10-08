@@ -10,7 +10,7 @@ detect_release(ids, species = NULL)
 DetectRelease(ids, species = NULL)
 }
 \arguments{
-\item{ids}{Character vector of gene identifiers.}
+\item{ids}{Character vector of gene or transcript identifiers.}
 
 \item{species}{Species name, e.g. \code{"homo_sapiens"}. Detected when \code{NULL}.
 
@@ -30,6 +30,11 @@ indistinguishable fingerprints.
 Scores every release the index knows for this species, marks infeasible
 those that could not have produced the input, and ranks the rest by fit. See
 \code{vignette("how-it-works")} for the scoring.
+}
+\details{
+Transcript identifiers (\code{ENSMUST...}, \code{FBtr...}) are scored against a
+separate transcript index, which covers the commonly quantified species and
+GENCODE; for another species pass \code{release} to \code{\link[=transcript2gene]{transcript2gene()}}.
 }
 \examples{
 ids <- readLines(system.file("extdata", "example_ids.txt.gz",

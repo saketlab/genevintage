@@ -34,6 +34,22 @@ QMAX_TOLERANCE <- 0.999
   readRDS(f)
 })
 
+#' The shipped transcript fingerprint index
+#'
+#' Same columns as .fp(); fewer species, see data-raw/build_tx_fp.R.
+#' @noRd
+.tx_fp <- .once(function() {
+  f <- .extdata("tx_fingerprints.rds")
+  if (file.exists(f)) readRDS(f) else .fp()[0, ]
+})
+
+#' Whether most identifiers are transcripts (ENSMUST..., FBtr...)
+#' @noRd
+.is_transcript <- function(ids, bare = .bare(ids)) {
+  bare <- bare[!is.na(bare) & nzchar(bare)]
+  length(bare) > 0 && mean(grepl(TRANSCRIPT_RX, bare, perl = TRUE)) > 0.5
+}
+
 # compare release numbers numerically after removing GENCODE letter tags
 .rel_num <- function(x) {
   # Historical GENCODE releases include 2b, 3b and 3c as well as mouse M tags.
@@ -91,7 +107,10 @@ qmax_violations <- function(fp = .fp()) {
 #' @noRd
 .known_species <- .once(function() {
   # merge annotation sources sharing a species, prefix and scheme
-  x <- .fp()[, c("species", "division", "prefix", "scheme", "source")]
+  # Ensembl transcripts share the gene stem; only FBtr needs its own row
+  tx <- .tx_fp()
+  x <- rbind(.fp(), tx[tx$scheme != "ensembl", , drop = FALSE])
+  x <- x[, c("species", "division", "prefix", "scheme", "source")]
   x <- x[order(x$source != "ensembl"), ] # keep the Ensembl division
   x <- x[!duplicated(paste(x$species, x$prefix, x$scheme)), ]
   x$source <- NULL
@@ -120,7 +139,7 @@ qmax_violations <- function(fp = .fp()) {
 #'
 #' Matches identifier prefixes to indexed species.
 #'
-#' @param ids Character vector of gene identifiers.
+#' @param ids Character vector of gene or transcript identifiers.
 #' @return A data frame of candidate species ordered by the share of `ids` they
 #'   explain, with columns `species`, `common`, `division`, `prefix`, `scheme`
 #'   and `frac`.
@@ -171,7 +190,7 @@ detect_species <- function(ids) {
   num <- .id_number(ids, bare = ids) # ids are already bare here
   obs_max <- suppressWarnings(max(num, na.rm = TRUE))
   obs_n <- length(unique(ids))
-  fp <- .fp()
+  fp <- if (.is_transcript(bare = ids)) .tx_fp() else .fp() # ids are bare here
   fp <- fp[fp$species %in% known$species, ]
   qmax_by <- vapply(
     split(fp$qmax, fp$species),
@@ -202,7 +221,11 @@ detect_species <- function(ids) {
 #' those that could not have produced the input, and ranks the rest by fit. See
 #' `vignette("how-it-works")` for the scoring.
 #'
-#' @param ids Character vector of gene identifiers.
+#' Transcript identifiers (`ENSMUST...`, `FBtr...`) are scored against a
+#' separate transcript index, which covers the commonly quantified species and
+#' GENCODE; for another species pass `release` to [transcript2gene()].
+#'
+#' @param ids Character vector of gene or transcript identifiers.
 #' @param species Species name, e.g. `"homo_sapiens"`. Detected when `NULL`.
 #'
 #' A best match at the oldest or newest indexed release raises a warning: the
@@ -229,13 +252,18 @@ detect_release <- function(ids, species = NULL) {
     if (!nrow(cand)) stop("no known species matches these identifiers.", call. = FALSE)
     species <- cand$species[1]
   }
-  fp <- .fp()
+  bare <- .bare(ids)
+  tx <- .is_transcript(bare = bare)
+  fp <- if (tx) .tx_fp() else .fp()
   ref <- fp[fp$species == species, ]
-  if (!nrow(ref)) stop("no fingerprints for species '", species, "'.", call. = FALSE)
+  if (!nrow(ref)) {
+    stop(sprintf("no %s fingerprints for species '%s'.", if (tx) "transcript" else "gene", species),
+      call. = FALSE
+    )
+  }
 
   # score only this species' ids; a stray symbol like TP53 contributes 53
   pat <- .species_pattern(ref$scheme[1], ref$prefix[1])
-  bare <- .bare(ids)
   own <- grepl(pat, bare)
   if (!any(own)) {
     stop(sprintf("none of the identifiers match %s.", species), call. = FALSE)
@@ -272,6 +300,8 @@ detect_release <- function(ids, species = NULL) {
 
   dist <- abs(log1p(ref$n) - log1p(obs_n))
   if (ordered) dist <- dist + abs(log1p(ref$q90) - log1p(obs_q90))
+  # filtered transcriptomes skew n and q90; the newest id survives
+  if (ordered && tx) dist <- dist + abs(log1p(ref$qmax) - log1p(obs_qmax))
 
   out <- data.frame(
     species = species, source = ref$source,

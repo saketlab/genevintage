@@ -10,7 +10,7 @@ detect_species(ids)
 DetectSpecies(ids)
 }
 \arguments{
-\item{ids}{Character vector of gene identifiers.}
+\item{ids}{Character vector of gene or transcript identifiers.}
 }
 \value{
 A data frame of candidate species ordered by the share of \code{ids} they
