@@ -10,17 +10,17 @@ ortholog_species(release, division = "vertebrates")
 OrthologSpecies(release, division = "vertebrates")
 }
 \arguments{
-\item{release}{Ensembl release number. Under Ensembl Genomes, that division's
-own release number.}
+\item{release}{Ensembl release number. Under Ensembl Genomes, the release
+number of that division.}
 
-\item{division}{Which division's Compara to list. Defaults to vertebrates.}
+\item{division}{The division of Compara to list. The default is vertebrates.}
 }
 \value{
 A character vector of species names.
 }
 \description{
-Lists the species with Compara files for a release and division so callers
-can check availability before streaming a pair.
+This function lists the species with Compara files for a release and
+division. Use it to examine availability before you stream a pair.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

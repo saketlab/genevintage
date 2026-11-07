@@ -3,7 +3,7 @@
 \name{stream_xrefs}
 \alias{stream_xrefs}
 \alias{StreamXrefs}
-\title{Stream one cross-reference TSV, keeping the gene-level pairs}
+\title{Stream one cross-reference TSV and keep the gene-level pairs}
 \usage{
 stream_xrefs(url, db = "EntrezGene", chunk = 2e+05)
 
@@ -12,16 +12,16 @@ StreamXrefs(url, db = "EntrezGene", chunk = 2e+05)
 \arguments{
 \item{url}{A \code{.tsv.gz} cross-reference URL.}
 
-\item{db}{The \code{db_name} to keep, e.g. \code{"EntrezGene"}.}
+\item{db}{The \code{db_name} to keep, for example \code{"EntrezGene"}.}
 
-\item{chunk}{Lines to decompress per iteration.}
+\item{chunk}{Lines to decompress in each iteration.}
 }
 \value{
 A data frame of \code{id} and \code{xref}.
 }
 \description{
-Deduplicate gene-level pairs from transcript rows while streaming to limit
-memory to distinct pairs.
+This function removes duplicates of gene-level pairs from transcript rows
+during the stream. This limits memory to distinct pairs.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

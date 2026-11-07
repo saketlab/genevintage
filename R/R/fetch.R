@@ -46,8 +46,6 @@
   v
 }
 
-# ---- protocol -------------------------------------------------------------
-#
 # FTP preferred, probed once per session so a blocked port 21 doesn't cost a
 # timeout on every fetch. options(genevintage.protocol=) overrides;
 # "ftp" disables the fallback.
@@ -73,8 +71,8 @@
 
 #' The URLs to try, in order
 #'
-#' One entry when the protocol is pinned or FTP is unreachable, two when FTP is
-#' worth trying and HTTPS is there to catch it.
+#' One entry when the protocol is pinned or FTP is unreachable. Otherwise two
+#' entries: FTP first, then HTTPS if FTP fails.
 #' @noRd
 .url_candidates <- function(url) {
   pref <- getOption("genevintage.protocol", "auto")
@@ -90,10 +88,10 @@
   .as_https(url)
 }
 
-#' Do something with a URL, over whichever protocol answers
+#' Figure out the right protocol for a URL
 #'
-#' Try each protocol once; allow three attempts for the final candidate to
-#' recover from transient failures.
+#' Try each protocol once. The final candidate gets three attempts, because a
+#' failure can be transient.
 #' @noRd
 .by_protocol <- function(url, f) {
   cand <- .url_candidates(url)
@@ -105,8 +103,6 @@
   }
   v
 }
-
-# ---- directory listings ---------------------------------------------------
 
 #' Entry names from a directory index, whichever protocol served it
 #'
@@ -133,7 +129,7 @@
   unique(n[nzchar(n) & !grepl("^[./]", n)])
 }
 
-#' A directory's entry names, or a message naming what could not be reached
+#' The entry names of a directory, or a message that gives the URL that failed
 #' @noRd
 .listing <- function(dir_url, what = dir_url) {
   idx <- .by_protocol(dir_url, function(u) readLines(u, warn = FALSE))
@@ -164,16 +160,17 @@
   unlist(parts, use.names = FALSE)
 }
 
-#' Pull gene records out of a GTF without ever writing it to disk
+#' Stream gene records from a GTF
 #'
-#' Decompresses the stream in chunks and retains `gene` lines. If there are
-#' none, reads the first record per gene from the remaining feature lines.
+#' This function decompresses the stream in chunks and keeps the `gene` lines.
+#' If there are no `gene` lines, it reads the first record for each gene from
+#' the remaining feature lines.
 #'
 #' @param url A `.gtf.gz` URL.
-#' @param chunk Lines to decompress per iteration.
+#' @param chunk Lines to decompress in each iteration.
 #' @return A data frame of `id`, `name`, `chr`, `start`, `end`, `strand`,
-#'   `span`, `id_version` and `biotype`. `span` is the genomic extent from
-#'   first to last base; TPM and FPKM require exonic length.
+#'   `span`, `id_version` and `biotype`. `span` is the genomic extent from the
+#'   first base to the last base. TPM and FPKM must use exonic length.
 #' @examplesIf interactive()
 #' # any Ensembl-shaped GTF; nothing is written to disk
 #' stream_gtf(paste0(
@@ -257,7 +254,7 @@ stream_gtf <- function(url, chunk = 100000) {
   out
 }
 
-#' Where GENCODE keeps one release's GTF
+#' Build Gencode URLs
 #'
 #' Build the human or mouse URL for the primary assembly or the scaffold- and
 #' patch-inclusive gene set.
@@ -276,7 +273,8 @@ stream_gtf <- function(url, chunk = 100000) {
 
 #' The index row and effective release for one annotation
 #'
-#' Offline; the URL may need a directory listing, so .annotation_url() builds it.
+#' No network access. .annotation_url() builds the URL, which can need a
+#' directory listing.
 #' @noRd
 .annotation_source <- function(species, release, assembly = NULL, source = NULL) {
   # annotation_root and frozen_release carry the relocation as data; human
@@ -343,25 +341,27 @@ stream_gtf <- function(url, chunk = 100000) {
 
 #' Mapping table for one species and Ensembl release
 #'
-#' Streamed from the Ensembl GTF on first use, then cached, so later calls are
-#' offline. Gene versions are read from GTF attributes or identifier suffixes.
+#' The function streams this table from the Ensembl GTF on first use and then
+#' caches it. The function reads gene versions from GTF attributes or
+#' identifier suffixes.
 #'
-#' @param species Species, in any form [resolve_species()] accepts:
+#' @param species Species, in any form that [resolve_species()] accepts:
 #'   `"homo_sapiens"`, `"Human"` or `"human"`.
 #' @param release Ensembl release number.
-#' @param assembly Assembly suffix as the index records it, e.g. `"38"` or
-#'   `"37"`. Together with `species`, `source` and `release` it selects the index
-#'   row that carries the annotation's FTP root and, where an assembly is
-#'   frozen, the release its annotation actually stopped at.
-#' @param source Annotation family: `"ensembl"`, or `"gencode"` /
-#'   `"gencode_all"` for GENCODE's primary and scaffold-inclusive gene sets.
-#'   Needed only where one release number exists in more than one of them.
-#' @param refresh Re-download even when a cached copy exists.
+#' @param assembly Assembly suffix as the index records it, for example `"38"`
+#'   or `"37"`. Together with `species`, `source` and `release`, it selects one
+#'   index row. That row has the FTP root of the annotation. If an assembly is
+#'   frozen, the row also has the release where its annotation stopped.
+#' @param source Annotation family: `"ensembl"`, `"gencode"` for the primary
+#'   gene set of GENCODE, or `"gencode_all"` for its gene set with scaffolds.
+#'   This is necessary only where one release number exists in more than one
+#'   family.
+#' @param refresh Download the table again, even when a cached copy exists.
 #'
 #' @return A data frame of `id`, `name`, `chr`, `start`, `end`, `strand`,
-#'   `span`, `id_version` and `biotype`, suitable as the `mapping` argument of
-#'   [gene_names()]. `span` is the genomic extent from first to last base;
-#'   TPM and FPKM require exonic length. See [stream_gtf()].
+#'   `span`, `id_version` and `biotype`, for use as the `mapping` argument of
+#'   [gene_names()]. `span` is the genomic extent from the first base to the
+#'   last base. TPM and FPKM must use exonic length. See [stream_gtf()].
 #' @examplesIf interactive()
 #' m <- fetch_mapping("yeast", release = 116)
 #' head(m)
@@ -375,7 +375,7 @@ fetch_mapping <- function(species, release, assembly = NULL, source = NULL,
   f <- .cache_path("mapping", a$row$source, a$species, a$row$assembly, a$release)
   if (!refresh) {
     hit <- .cache_get(f, .mapping_memo, c("id", "name", "chr", "biotype", "span"))
-    if (!is.null(hit) && all(is.na(hit$biotype))) hit <- NULL # refetch mappings with entirely missing biotypes
+    if (!is.null(hit) && all(is.na(hit$biotype))) hit <- NULL 
     if (!is.null(hit)) {
       return(hit)
     }

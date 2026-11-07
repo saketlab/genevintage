@@ -15,25 +15,29 @@ GeneNames(ids, mapping, unique = FALSE, warn = TRUE)
 \item{mapping}{A data frame with \code{id} and \code{name} columns, or a named
 character vector of names indexed by identifier.}
 
-\item{unique}{Make the result unique by appending the identifier to names
-that would otherwise collide. Off by default, since it changes names.}
+\item{unique}{Make the result unique. The function appends the identifier to
+names that otherwise collide. This is off by default, because it changes
+names.}
 
-\item{warn}{Warn when names collide or when little of the input mapped. The
-collision warning carries class \code{genevintage_duplicate_names}, so a caller
-that disambiguates downstream can catch and muffle just that one.}
+\item{warn}{Give a warning when names collide or when little of the input
+mapped. The collision warning has class \code{genevintage_duplicate_names}.
+A caller that disambiguates downstream can catch and muffle only that
+warning.}
 }
 \value{
-A character vector the same length as \code{ids}, carrying a \code{mapped}
-attribute: the logical vector of which inputs found a real name.
+A character vector with the same length as \code{ids}, with a \code{mapped}
+attribute. This attribute is the logical vector of the inputs that found a
+real name.
 }
 \description{
-Returns one value per input, in the input's order. An identifier with no
-name in \code{mapping} is returned unchanged, so the result is always usable as
-row labels.
+This function returns one value for each input, in the order of the input. It
+returns an identifier with no name in \code{mapping} unchanged, so you can
+use the result as row labels.
 }
 \details{
-Version suffixes are ignored when matching, so \code{ENSG00000141510.16} resolves
-against an unversioned mapping and the other way round.
+The function ignores version suffixes when it matches.
+\code{ENSG00000141510.16} resolves against an unversioned mapping. A versioned
+mapping also resolves an unversioned identifier.
 }
 \examples{
 m <- data.frame(
@@ -44,5 +48,5 @@ gene_names(c("ENSG00000141510.16", "ENSG00000284733", "ENSG00000999999"), m)
 #> "TP53" "ENSG00000284733" "ENSG00000999999"
 }
 \seealso{
-\code{\link[=fetch_mapping]{fetch_mapping()}} to obtain \code{mapping} for a species and release.
+\code{\link[=fetch_mapping]{fetch_mapping()}} to get \code{mapping} for a species and release.
 }

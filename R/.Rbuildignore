@@ -27,3 +27,4 @@
 ^vignettes/genevintage\.Rmd$
 ^vignettes/matrix-rows\.Rmd$
 ^inst/extdata/gene-rows$
+^tests/testthat/_problems$

@@ -10,20 +10,21 @@ fetch_xrefs(species, release, db = "entrez", refresh = FALSE)
 FetchXrefs(species, release, db = "entrez", refresh = FALSE)
 }
 \arguments{
-\item{species}{Species in any form \code{\link[=resolve_species]{resolve_species()}} accepts.}
+\item{species}{Species in any form that \code{\link[=resolve_species]{resolve_species()}} accepts.}
 
 \item{release}{Ensembl release number for the cross-reference files.}
 
-\item{db}{Cross-reference database. \code{"entrez"} is the only one indexed.}
+\item{db}{Cross-reference database. \code{"entrez"} is the only indexed database.}
 
-\item{refresh}{Refetch and overwrite the cached copy.}
+\item{refresh}{Fetch the table again and overwrite the cached copy.}
 }
 \value{
-A data frame of \code{id} and \code{xref}, one row per distinct pair.
+A data frame of \code{id} and \code{xref}, one row for each distinct pair.
 }
 \description{
-Streams the cross-reference TSV Ensembl publishes for a species and release,
-keeps the gene-level pairs and caches them, so later calls are offline.
+This function streams the cross-reference TSV that Ensembl publishes for a
+species and release. It keeps the gene-level pairs and caches them. Later
+calls work offline.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
@@ -31,5 +32,5 @@ head(fetch_xrefs("yeast", release = 116))
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=entrez_ids]{entrez_ids()}} for the lookup this feeds.
+\code{\link[=entrez_ids]{entrez_ids()}} for the lookup that uses this table.
 }

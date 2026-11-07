@@ -10,8 +10,8 @@ species_table(pattern = NULL)
 SpeciesTable(pattern = NULL)
 }
 \arguments{
-\item{pattern}{Optional: keep only species whose Ensembl or common name
-matches, ignoring case and punctuation.}
+\item{pattern}{Optional. Keep only species whose Ensembl name or common name
+matches. The match ignores case and punctuation.}
 }
 \value{
 A data frame of \code{species}, \code{common}, \code{taxonomy_id} and \code{division}.

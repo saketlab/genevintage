@@ -1,5 +1,3 @@
-# Transcript identifiers to their genes, and transcript-level counts to gene level.
-
 .transcript_memo <- new.env(parent = emptyenv())
 
 # coverage below which older assemblies are tried
@@ -9,17 +7,19 @@ TRANSCRIPT_TRIES <- 3L
 # past this distance ids are too few to date; they'd pick the smallest release
 TRANSCRIPT_MAX_DIST <- 1
 
-#' Transcript-to-gene records from a GTF, streamed without writing it to disk
+#' Stream transcript-to-gene records from a GTF
 #'
-#' Keeps `transcript` lines. GTFs before Ensembl release 75 have none, so a
-#' chunk without them is read from its exon and CDS lines, which carry the same
-#' `transcript_id`, `gene_id` and `gene_name`; duplicates are dropped.
+#' This function keeps `transcript` lines. GTFs before Ensembl release 75 do not
+#' have these lines. For a chunk without them, the function reads the exon and
+#' CDS lines, which contain the same `transcript_id`, `gene_id` and `gene_name`.
+#' It removes duplicates.
 #'
 #' @param url A `.gtf.gz` URL.
-#' @param chunk Lines to decompress per iteration.
+#' @param chunk Lines to decompress in each iteration.
 #' @return A data frame of `transcript_id`, `id` (the gene) and `name` (the gene
-#'   name, `NA` where the annotation gives none). Identifiers keep whatever
-#'   version suffix the GTF writes: GENCODE versions them, Ensembl does not.
+#'   name, `NA` where the annotation gives none). Identifiers keep the version
+#'   suffix that the GTF writes. GENCODE gives them versions, and Ensembl does
+#'   not.
 #' @seealso [fetch_transcripts()] for the cached table of one release.
 #' @examplesIf interactive()
 #' stream_transcripts(paste0(
@@ -53,12 +53,12 @@ stream_transcripts <- function(url, chunk = 100000) {
 
 #' Transcript-to-gene table for one species and release
 #'
-#' Streamed from the annotation's GTF on first use, then cached, so later calls
-#' are offline.
+#' The function streams this table from the GTF of the annotation on first use
+#' and then caches it. Later calls work offline.
 #'
 #' @inheritParams fetch_mapping
 #' @return A data frame of `transcript_id`, `id` and `name`, as
-#'   [stream_transcripts()] returns it.
+#'   [stream_transcripts()] returns.
 #' @seealso [transcript2gene()] to map a set of transcript identifiers.
 #' @examplesIf interactive()
 #' head(fetch_transcripts("chicken", release = 116))
@@ -77,7 +77,7 @@ fetch_transcripts <- function(species, release, assembly = NULL, source = NULL,
   tab
 }
 
-#' The releases worth trying for transcripts of one species
+#' The releases to try for transcripts of one species
 #'
 #' For species outside the transcript index. Stable identifiers persist within
 #' an assembly, so the newest Ensembl release of each assembly stands for it,
@@ -96,11 +96,11 @@ fetch_transcripts <- function(species, release, assembly = NULL, source = NULL,
   fp[, c("release", "assembly"), drop = FALSE]
 }
 
-#' The best-scoring release for a set of transcript identifiers
+#' The release with the best score for a set of transcript identifiers
 #'
-#' The best few, best first. `NULL` when the species is outside the
-#' transcript index, no release is consistent with the ids, or none fits them
-#' (too few ids to date), so the caller falls back to coverage.
+#' The best few, best first. `NULL` when the species is outside the transcript
+#' index, or when no release is consistent with the ids or fits them. Too few ids
+#' cannot give a date. After `NULL`, the caller uses coverage.
 #' @noRd
 .detected_transcript_release <- function(ids, species, assembly = NULL, source = NULL) {
   tx <- .tx_fp()
@@ -147,7 +147,7 @@ fetch_transcripts <- function(species, release, assembly = NULL, source = NULL,
   tab[!is.na(tab$transcript_id) & !is.na(tab$gene_id), , drop = FALSE]
 }
 
-#' Match ids against a transcript table, ignoring versions
+#' Match ids against a transcript table. Versions do not count.
 #' @noRd
 .match_transcripts <- function(ids, tab) {
   # GENCODE files PAR_Y copies under their own gene; match the tag first
@@ -167,39 +167,48 @@ fetch_transcripts <- function(species, release, assembly = NULL, source = NULL,
 
 #' Map transcript identifiers to their genes
 #'
-#' Detects the species from the identifier prefix (`ENSMUST`, `ENSGALT`, ...),
-#' fetches the annotation's transcript table (streamed once, then cached) and
-#' returns each transcript's gene identifier and gene name. Version suffixes
-#' are ignored when matching, so `ENSMUST00000178537.2` resolves against an
-#' unversioned annotation and the other way round.
+#' This function detects the species from the identifier prefix (`ENSMUST`,
+#' `ENSGALT`, ...). It fetches the transcript table of the annotation (streamed
+#' once, then cached). It returns the gene identifier and gene name of each
+#' transcript. It ignores version suffixes when it matches, so
+#' `ENSMUST00000178537.2` resolves against an unversioned annotation. A
+#' versioned annotation also resolves an unversioned identifier.
 #'
-#' Without `release`, [detect_release()] dates the transcript identifiers
-#' against a transcript fingerprint index of Ensembl and GENCODE for the
-#' commonly quantified species. `source` and `assembly` narrow the candidates.
+#' Without `release`, [detect_release()] finds the release of the transcript
+#' identifiers. It uses a transcript fingerprint index of Ensembl and GENCODE
+#' for the commonly quantified species. `source` and `assembly` narrow the
+#' candidates.
 #'
-#' When the best-scoring release leaves any id unmapped, the best release of
-#' each other annotation family (Ensembl, GENCODE, GENCODE ALL) is fetched too
-#' and the best-covering one kept: a filtered transcriptome (cDNA only) dates by
-#' its newest id but leaves its family open.
+#' If the release with the best score leaves an identifier unmapped, the
+#' function also fetches the best release of each other annotation family. These
+#' families are Ensembl, GENCODE and GENCODE ALL. It keeps the release with the
+#' best coverage. A filtered transcriptome (cDNA only) gets its release from its
+#' newest identifier, but its family stays open.
 #'
-#' A species outside that index, a set too small to date (a handful of ids),
-#' or dated releases explaining less than 90% of the input fall back to
-#' coverage: the newest Ensembl release of each assembly is tried,
-#' newest first, and the best-covering one kept. Chicken
-#' needs this: GRCg7b (release 107 on) renumbered every identifier, so GRCg6a
-#' transcripts only map at release 106 or earlier.
+#' Three conditions make the function use coverage:
+#'
+#' * The species is outside that index.
+#' * The set is too small to find a release.
+#' * The detected releases explain less than 90% of the input.
+#'
+#' For coverage, the function tries the newest Ensembl release of each assembly,
+#' newest first. It keeps the release with the best coverage. Chicken needs this
+#' method. GRCg7b (release 107 and later) renumbered every identifier, so GRCg6a
+#' transcripts map only at release 106 or earlier.
 #'
 #' @inheritParams geneid2name
+#' @param quiet Do not show the message that reports the detected values.
 #' @param ids Character vector of transcript identifiers.
-#' @param release Annotation release. Without it, chosen as above.
-#' @param mapping Skip fetching and use this table: [fetch_transcripts()]
+#' @param release Annotation release. Without it, the function selects a release
+#'   as the details describe.
+#' @param mapping Do not fetch a table. Use this table: [fetch_transcripts()]
 #'   output, or a data frame with `transcript_id`, `gene_id` and `gene_name`.
 #'
-#' @return A data frame with one row per input, in order: `input`,
+#' @return A data frame with one row for each input, in order: `input`,
 #'   `transcript_id` (as the annotation writes it), `gene_id` and `gene_name`.
-#'   Unmapped inputs have `NA` in the last three. A gene without a name has its
-#'   identifier as `gene_name`. Attributes `species`, `source`, `release` and
-#'   `assembly` record the annotation used.
+#'   Unmapped inputs have `NA` in the last three columns. A gene without a name
+#'   has its identifier as `gene_name`. The attributes `species`, `source`,
+#'   `release` and `assembly` record the annotation that the function used.
 #' @seealso [aggregate_transcripts()] to sum a transcript-level matrix to genes.
 #' @export
 #' @examples
@@ -280,7 +289,7 @@ transcript2gene <- function(ids, species = NULL, release = NULL, assembly = NULL
   )
 }
 
-#' Sum the rows of a matrix within groups, keeping its class
+#' Sum the rows of a matrix within groups. The class stays the same.
 #' @noRd
 .sum_rows <- function(x, group) {
   lev <- unique(group)
@@ -301,29 +310,32 @@ transcript2gene <- function(ids, species = NULL, release = NULL, assembly = NULL
 
 #' Sum transcript-level counts to gene level
 #'
-#' Maps each row's transcript identifier with [transcript2gene()] and sums the
-#' rows of each gene. Rows come back in the order their gene was first seen. Columns,
-#' column names and the matrix class (dense, sparse `Matrix`, data frame) are
-#' kept.
+#' This function maps the transcript identifier of each row with
+#' [transcript2gene()] and sums the rows of each gene. The rows of the result
+#' are in the order of the first occurrence of each gene. The function keeps
+#' columns, column names and the matrix class (dense, sparse `Matrix`, data
+#' frame).
 #'
-#' Summing is right for counts and for TPM; it is not for effective lengths.
+#' A sum is correct for counts and for TPM. A sum is not correct for effective
+#' lengths.
 #'
 #' @inheritParams transcript2gene
-#' @param x A numeric matrix, sparse `Matrix` or data frame whose rows are
-#'   transcripts.
-#' @param row_ids Overrides which identifiers to map. Defaults to `rownames(x)`;
-#'   set this when `x` has none.
-#' @param label Label gene rows by `"id"` (the gene identifier) or `"name"`
-#'   (the gene name, with the identifier appended where two genes share one).
+#' @param x A numeric matrix, sparse `Matrix` or data frame with transcripts as
+#'   rows.
+#' @param row_ids This argument overrides the identifiers to map. The default is
+#'   `rownames(x)`. Set this argument when `x` has no row names.
+#' @param label Label gene rows by `"id"` (the gene identifier) or `"name"` (the
+#'   gene name, with the identifier appended where two genes share one).
 #' @param unmapped `"keep"` leaves unmapped rows under their own identifier, as
-#'   [geneid2name()] keeps an identifier it cannot name; `"drop"` removes them.
-#' @param quiet Suppress the messages reporting the annotation and how many rows
-#'   mapped.
+#'   [geneid2name()] keeps an identifier that it cannot name. `"drop"` removes
+#'   them.
+#' @param quiet Do not show the messages about the annotation and the number of
+#'   mapped rows.
 #'
-#' @return `x` with one row per gene. A warning of class
-#'   `genevintage_unmapped_transcripts` is raised when fewer than half the rows
-#'   mapped; call [transcript2gene()] and pass its result as `mapping` to see
-#'   which ones.
+#' @return `x` with one row for each gene. The function gives a warning of class
+#'   `genevintage_unmapped_transcripts` when fewer than half of the rows mapped.
+#'   To see which rows, call [transcript2gene()] and pass its result as
+#'   `mapping`.
 #' @seealso [transcript2gene()], [geneid2name()].
 #' @export
 #' @examples

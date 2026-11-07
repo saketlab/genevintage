@@ -1,19 +1,21 @@
-# The other direction: names and Entrez ids back to stable identifiers, and the
-# whole annotation record for a set of genes.
+# Convert names and Entrez ids back to stable identifiers
 
 #' Gene identifiers for gene names or Entrez identifiers
 #'
-#' The reverse of [gene_names()]. Published marker lists and enrichment results
-#' carry symbols or Entrez identifiers; count matrices carry Ensembl ones.
+#' This function is the reverse of [gene_names()]. Published marker lists and
+#' enrichment results contain gene names or Entrez identifiers. Count matrices
+#' contain Ensembl identifiers.
 #'
-#' Symbols and Entrez identifiers can each match multiple genes, so the table
-#' returns every match. Unmatched inputs are retained with `id = NA`.
+#' Gene names and Entrez identifiers can each match more than one gene, so the
+#' table contains every match. The function keeps unmatched inputs with
+#' `id = NA`.
 #'
 #' @inheritParams mito_genes
 #' @param x Gene names, or Entrez identifiers.
-#' @param from What `x` holds: `"name"`, `"entrez"`, or `"auto"` to decide from
-#'   the input. All-digit input is Entrez; anything else is a name.
-#' @return A data frame of `input`, `id` and `name`, one row per match.
+#' @param from What `x` contains: `"name"`, `"entrez"`, or `"auto"` to decide
+#'   from the input. Input with only digits is Entrez. All other input is a
+#'   name.
+#' @return A data frame of `input`, `id` and `name`, one row for each match.
 #' @seealso [gene_names()] for the forward direction, [entrez_ids()].
 #' @export
 #' @examples
@@ -69,8 +71,6 @@ gene_ids <- function(x, from = c("auto", "name", "entrez"), species = NULL,
   .keep_unmatched(hit, x)
 }
 
-# pad unmatched tokens with NA row indices to preserve column types;
-# grouped positions expand multiple matches in input order
 .keep_unmatched <- function(hit, x) {
   u <- unique(x)
   pos <- match(hit$input, u)
@@ -94,18 +94,19 @@ gene_ids <- function(x, from = c("auto", "name", "entrez"), species = NULL,
 
 #' Everything the annotation knows about a set of genes
 #'
-#' Symbol, biotype and coordinates in one table, for genes given as identifiers
-#' or as names. The caller's own token comes back in `input`, so the result
-#' joins straight onto a results table or a feature frame.
+#' This function gives the gene name, biotype and coordinates in one table, for
+#' genes that you give as identifiers or as names. Your own token comes back in
+#' `input`, so you can join the result directly to a results table or a feature
+#' frame.
 #'
-#' Unmatched inputs are retained with `NA` columns. Names matching several
-#' genes yield a row for each.
+#' The function keeps unmatched inputs with `NA` columns. A name that matches
+#' several genes gives one row for each gene.
 #'
 #' @inheritParams mito_genes
-#' @return A data frame of `input`, `id`, `name`, `chr`, `biotype` and, where
-#'   the annotation carries them, `start`, `end`, `strand` and `span`. `span` is
-#'   the genomic extent from first to last base. See [stream_gtf()].
-#' @seealso [gene_names()] for one value per input.
+#' @return A data frame of `input`, `id`, `name`, `chr`, `biotype` and, if the
+#'   annotation has them, `start`, `end`, `strand` and `span`. `span` is the
+#'   genomic extent from the first base to the last base. See [stream_gtf()].
+#' @seealso [gene_names()] for one value for each input.
 #' @export
 #' @examples
 #' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))

@@ -42,31 +42,34 @@
   )
 }
 
-#' Inspect or clear the download cache
+#' Show or clear the download cache
 #'
-#' Mapping tables and ortholog pairs are streamed once and cached under
-#' `tools::R_user_dir("genevintage", "cache")`, so a species you have used once
-#' works offline afterwards. This reports what is cached and removes it.
+#' The package streams mapping tables and ortholog pairs once. It caches them
+#' under `tools::R_user_dir("genevintage", "cache")`, so a species that you
+#' used once works offline after that. This function reports the contents of the
+#' cache and can remove them.
 #'
-#' The location follows R's own convention and can be moved by setting the
-#' `R_USER_CACHE_DIR` environment variable before the package is used.
+#' To move the location, set the `R_USER_CACHE_DIR` environment variable
+#' before you use the package.
 #'
-#' Interrupted writes leave `.rds.tmp` files, listed as `partial` and eligible
-#' for removal.
+#' An interrupted write leaves a `.rds.tmp` file. The function lists these files
+#' as `partial`, and you can remove them.
 #'
-#' @param clear Remove cached files. `TRUE` removes all of them; a number
-#'   removes those not used in that many days.
-#' @return A data frame with one row per cached file (`file`, `kind`, `species`,
-#'   `to`, `release`, `bytes`, `modified`), invisibly when `clear` is not
-#'   `FALSE`. `to` is the second species of an ortholog pair and
-#'   is `NA` for a mapping. Zero rows when nothing is cached.
+#' @param clear Remove cached files. `TRUE` removes all of them. A number
+#'   removes the files with a modification time older than that number of days.
+#' @return A data frame with one row for each cached file (`file`, `kind`,
+#'   `species`, `to`, `release`, `bytes`, `modified`). The function returns it
+#'   invisibly when `clear` is not `FALSE`. `to` is the second species of an
+#'   ortholog pair and is `NA` for a mapping. The data frame has zero rows when
+#'   the cache is empty. When `clear` is not `FALSE`, it has only the removed
+#'   files.
 #'
 #' @examples
 #' # a scratch cache, so the example leaves yours alone
 #' old <- Sys.getenv("R_USER_CACHE_DIR")
 #' Sys.setenv(R_USER_CACHE_DIR = tempfile())
 #' gene_cache() # what is cached, and how large
-#' gene_cache(clear = 90) # drop anything untouched for 90 days
+#' gene_cache(clear = 90) # drop files older than 90 days
 #' gene_cache(clear = TRUE) # drop all of it
 #' Sys.setenv(R_USER_CACHE_DIR = old)
 #' @export

@@ -3,40 +3,43 @@
 \name{gene_cache}
 \alias{gene_cache}
 \alias{GeneCache}
-\title{Inspect or clear the download cache}
+\title{Show or clear the download cache}
 \usage{
 gene_cache(clear = FALSE)
 
 GeneCache(clear = FALSE)
 }
 \arguments{
-\item{clear}{Remove cached files. \code{TRUE} removes all of them; a number
-removes those not used in that many days.}
+\item{clear}{Remove cached files. \code{TRUE} removes all of them. A number
+removes the files with a modification time older than that number of days.}
 }
 \value{
-A data frame with one row per cached file (\code{file}, \code{kind}, \code{species},
-\code{to}, \code{release}, \code{bytes}, \code{modified}), invisibly when \code{clear} is not
-\code{FALSE}. \code{to} is the second species of an ortholog pair and
-is \code{NA} for a mapping. Zero rows when nothing is cached.
+A data frame with one row for each cached file (\code{file}, \code{kind},
+\code{species}, \code{to}, \code{release}, \code{bytes}, \code{modified}). The function returns it
+invisibly when \code{clear} is not \code{FALSE}. \code{to} is the second species of an
+ortholog pair and is \code{NA} for a mapping. The data frame has zero rows when
+the cache is empty. When \code{clear} is not \code{FALSE}, it has only the removed
+files.
 }
 \description{
-Mapping tables and ortholog pairs are streamed once and cached under
-\code{tools::R_user_dir("genevintage", "cache")}, so a species you have used once
-works offline afterwards. This reports what is cached and removes it.
+The package streams mapping tables and ortholog pairs once. It caches them
+under \code{tools::R_user_dir("genevintage", "cache")}, so a species that you
+used once works offline after that. This function reports the contents of the
+cache and can remove them.
 }
 \details{
-The location follows R's own convention and can be moved by setting the
-\code{R_USER_CACHE_DIR} environment variable before the package is used.
+To move the location, set the \code{R_USER_CACHE_DIR} environment variable
+before you use the package.
 
-Interrupted writes leave \code{.rds.tmp} files, listed as \code{partial} and eligible
-for removal.
+An interrupted write leaves a \code{.rds.tmp} file. The function lists these files
+as \code{partial}, and you can remove them.
 }
 \examples{
 # a scratch cache, so the example leaves yours alone
 old <- Sys.getenv("R_USER_CACHE_DIR")
 Sys.setenv(R_USER_CACHE_DIR = tempfile())
 gene_cache() # what is cached, and how large
-gene_cache(clear = 90) # drop anything untouched for 90 days
+gene_cache(clear = 90) # drop files older than 90 days
 gene_cache(clear = TRUE) # drop all of it
 Sys.setenv(R_USER_CACHE_DIR = old)
 }

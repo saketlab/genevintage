@@ -27,30 +27,31 @@ MitoGenes(
 }
 \arguments{
 \item{ids}{Optional character vector of gene identifiers or gene names. When
-given, the species and release are detected from them and only these genes
-are considered. When omitted, \code{species} must be named and the whole
-mitochondrial gene set for its newest indexed release is returned.}
+you give \code{ids}, the function detects the species and release from them and
+examines only these genes. When you omit \code{ids}, you must name \code{species}.
+The function then returns the full mitochondrial gene set for the newest
+indexed release of that species.}
 
-\item{species, release, assembly, source}{Skip detection by naming them.
-\code{species} accepts anything \code{\link[=resolve_species]{resolve_species()}} does.}
+\item{species, release, assembly, source}{Give these values to skip detection.
+\code{species} accepts every form that \code{\link[=resolve_species]{resolve_species()}} accepts.}
 
-\item{mapping}{Supply an annotation directly to bypass detection and
-downloading. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype},
-as \code{\link[=fetch_mapping]{fetch_mapping()}} returns; supports local GTFs and custom builds.}
+\item{mapping}{An annotation that you supply directly to bypass detection and
+download. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype}, as
+\code{\link[=fetch_mapping]{fetch_mapping()}} returns. It supports local GTFs and custom builds.}
 
-\item{quiet}{Suppress the message reporting what was detected.}
+\item{quiet}{Do not show the message that reports the detected values.}
 }
 \value{
-A data frame of \code{id}, \code{name}, \code{chr} and \code{biotype}, one row per
-mitochondrial gene. When \code{ids} were given, an \code{input} column comes first
-holding the caller's own token, identifier or gene name as passed, so
-\code{rownames(m) \%in\% mito_genes(rownames(m))$input} subsets a
-matrix directly whichever kind its row names are.
+A data frame of \code{id}, \code{name}, \code{chr} and \code{biotype}, one row for each
+mitochondrial gene. When you give \code{ids}, an \code{input} column comes first.
+This column holds your own token, identifier or gene name, as you passed
+it. \code{rownames(m) \%in\% mito_genes(rownames(m))$input} subsets a matrix
+directly, for both kinds of row names.
 }
 \description{
-Selects genes by mitochondrial sequence names in the annotation for use in
-mitochondrial count fractions. Sequence-name matching supports the naming
-conventions of different species.
+This function selects genes by the mitochondrial sequence names in the
+annotation. Use the result to calculate mitochondrial count fractions. The
+sequence-name match supports the name conventions of different species.
 }
 \examples{
 hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))

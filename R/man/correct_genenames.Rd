@@ -3,7 +3,7 @@
 \name{correct_genenames}
 \alias{correct_genenames}
 \alias{CorrectGeneNames}
-\title{Repair gene symbols a spreadsheet has converted to dates or numbers}
+\title{Repair gene symbols corrupted by a spreadsheet}
 \usage{
 correct_genenames(
   x,
@@ -30,65 +30,82 @@ CorrectGeneNames(
 )
 }
 \arguments{
-\item{x}{Gene names, some of which a spreadsheet may have converted, or a
-matrix, sparse \code{Matrix} or data frame with such names as its row names.}
+\item{x}{Gene names, or a matrix, sparse \code{Matrix}, or data frame with gene
+names as row names. Some of these names can have spreadsheet damage.}
 
-\item{species, release, assembly, source}{Skip detection by naming them.
-\code{species} accepts anything \code{\link[=resolve_species]{resolve_species()}} does.}
+\item{species, release, assembly, source}{Give these values to skip detection.
+\code{species} accepts every form that \code{\link[=resolve_species]{resolve_species()}} accepts.}
 
-\item{mapping}{Supply an annotation directly to bypass detection and
-downloading. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype},
-as \code{\link[=fetch_mapping]{fetch_mapping()}} returns; supports local GTFs and custom builds.}
+\item{mapping}{An annotation that you supply directly to bypass detection and
+download. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype}, as
+\code{\link[=fetch_mapping]{fetch_mapping()}} returns. It supports local GTFs and custom builds.}
 
-\item{unique}{Make the result unique by appending the damaged token to a
-repaired name that collides with another (as \code{\link[=gene_names]{gene_names()}} does), then
-falling back to \code{\link[=make.unique]{make.unique()}} for any collision that remains. Defaults
-to \code{TRUE} when \code{x} is a matrix, sparse \code{Matrix} or data frame, and to
-\code{FALSE} otherwise.}
+\item{unique}{Make the result unique. If a repaired name is the same as a
+different name, the function adds the damaged token to it, as
+\code{\link[=gene_names]{gene_names()}} does. Then \code{\link[=make.unique]{make.unique()}} changes any remaining duplicates.
+Defaults to \code{TRUE} when \code{x} is a matrix, sparse \code{Matrix}, or data frame, and
+to \code{FALSE} otherwise.}
 
-\item{quiet}{Suppress the message reporting what was detected.}
+\item{quiet}{Do not show the message that reports the detected values.}
 
-\item{row_ids}{When \code{x} is a matrix, sparse \code{Matrix} or data frame,
-overrides which row identifiers to correct. Defaults to \code{rownames(x)};
-set this when \code{x} has none.}
+\item{row_ids}{When \code{x} is a matrix, sparse \code{Matrix}, or data frame, the row
+identifiers to correct. Defaults to \code{rownames(x)}. Set this when \code{x} has no
+row names.}
 }
 \value{
-If \code{x} is a plain vector: a character vector the same length and
-order as \code{x}, carrying a \code{corrected} attribute (logical), an \code{ambiguous}
-attribute naming tokens that matched more than one symbol, and an
-\code{unresolved} attribute naming damaged tokens no symbol in this annotation
-produces. If \code{x} is a matrix, sparse \code{Matrix} or data frame: the same
-object with corrected row names and none of those attributes.
+If \code{x} is a matrix, sparse \code{Matrix} or data frame: the same object
+with corrected row names and none of the attributes below.
+
+If \code{x} is a plain vector: a character vector with the same length and order
+as \code{x}. The vector has these attributes:
+\itemize{
+\item \code{corrected}: logical.
+\item \code{ambiguous}: tokens that match more than one symbol.
+\item \code{unresolved}: damaged tokens that no symbol in this annotation can give.
+\item \code{skipped}: tokens that look damaged, in a list that holds numbers.
+\item \code{category}: the form of each damaged token, \code{NA} for other tokens. The
+values are \code{day_month} (\code{2-Sep}), \code{month_day} (\code{Sep-02}), \code{day_month_year}
+(\code{2-Sep-2019}), \code{numeric_date} (\code{9/2/2019}), \code{date_day} (\code{2020-09-02}),
+\code{date_year} (\code{2003-09-01}, where the year gives the gene number), \code{serial}
+(\code{42248}) and \code{scientific} (\code{2.31E+13}).
+\item \code{locale}: the languages that use the month word of a token, for example
+\code{"nl"} for \code{mei-01}, \code{NA} if there is no such word. In the year reading,
+only a repaired gene shows the language.
+}
 }
 \description{
-Excel silently reinterprets some gene symbols: \code{SEPT9} becomes \code{9-Sep},
-\code{MARCH1} becomes \code{1-Mar}, \code{2310009E13} becomes \code{2.31E+13}. Several symbols
-can produce the same token, so candidates are checked against the caller's
-species and release. For example, \code{9-Sep} resolves to \code{SEPT9} against
-Ensembl release 95 and \code{SEPTIN9} against release 116.
+Excel changes some gene symbols: \code{SEPT9} becomes \code{9-Sep}, \code{MARCH1} becomes
+\code{1-Mar}, and \code{2310009E13} becomes \code{2.31E+13}. Different symbols can give the
+same token, so the function compares candidates with the species and
+release that you supply. For example, \code{9-Sep} becomes \code{SEPT9} in Ensembl
+release 95 and \code{SEPTIN9} in release 116.
 }
 \details{
-Tokens that are not damaged are returned unchanged, so the result drops
-straight back into \code{rownames()}. A token with no surviving candidate, or with
-more than one, is also returned unchanged and reported. \code{MARCH1} and
-\code{MARC1} both become \code{1-Mar}; a candidate already present undamaged elsewhere
-in \code{x} is ruled out, which usually resolves it.
+The function does not change a gene name that has no damage, so you can use the
+result in \code{rownames()}. \code{MARCH1} and \code{MARC1} both become \code{1-Mar}. If a
+candidate is present without damage in \code{x}, the function removes that
+candidate.
 
-Candidates are checked against an annotation: \code{mapping} if given, otherwise
-\code{species} at \code{release}. Without \code{release} the newest one is used, which
-returns current HGNC spellings (\code{SEPTIN9}, not \code{SEPT9}); stable IDs in \code{x}
-are dated instead. Without \code{species}, it is detected from stable IDs in \code{x},
-and bare symbols are refused.
+The function compares candidates with \code{mapping} if you supply it. If not, it
+uses \code{species} at \code{release}. Without \code{release}, it uses the newest release,
+which has the current HGNC names (\code{SEPTIN9}, not \code{SEPT9}). But if \code{x} has
+stable IDs, it finds the release from these IDs. Without \code{species}, it finds
+the species from stable IDs in \code{x}, and it refuses a vector with only symbols.
 
-Renames beyond the old spelling come from the species' nomenclature
-authority: HGNC for human, MGI for mouse, ZFIN for zebrafish (\code{SEP15} to
-\code{SELENOF}, \code{sept9} to \code{septin9a}).  A \code{mapping} without \code{species} is
-read as human nomenclature.
+The nomenclature authority of the species gives more renames: HGNC for human,
+MGI for mouse, and ZFIN for zebrafish (\code{SEP15} to \code{SELENOF}, \code{sept9} to
+\code{septin9a}). If you supply \code{mapping} without \code{species}, the function uses
+human nomenclature.
 
-For a matrix, sparse \code{Matrix} or data frame, only row names are replaced;
-dimensions, row order and other attributes are preserved. Call
-\code{correct_genenames()} on \code{rownames(x)} to obtain the \code{corrected}, \code{ambiguous}
-and \code{unresolved} attributes.
+The function reads month names that Excel writes in other locales (\code{mars-02},
+\code{ago-01}). Such a token can also be a symbol that a person typed. For example,
+\code{mars-02} can be \code{MARCHF2} or \code{MARS2}. The function reports it as ambiguous
+unless one of the two is already present.
+
+For a matrix, sparse \code{Matrix}, or data frame, the function changes only the
+row names. It keeps the dimensions, the row order, and other attributes. To
+get the \code{corrected}, \code{ambiguous}, \code{unresolved}, and \code{skipped} attributes,
+call \code{correct_genenames()} on \code{rownames(x)}.
 }
 \examples{
 hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))

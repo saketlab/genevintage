@@ -27,31 +27,33 @@ HemoglobinGenes(
 }
 \arguments{
 \item{ids}{Optional character vector of gene identifiers or gene names. When
-given, the species and release are detected from them and only these genes
-are considered. When omitted, \code{species} must be named and the whole
-mitochondrial gene set for its newest indexed release is returned.}
+you give \code{ids}, the function detects the species and release from them and
+examines only these genes. When you omit \code{ids}, you must name \code{species}.
+The function then returns the full mitochondrial gene set for the newest
+indexed release of that species.}
 
-\item{species, release, assembly, source}{Skip detection by naming them.
-\code{species} accepts anything \code{\link[=resolve_species]{resolve_species()}} does.}
+\item{species, release, assembly, source}{Give these values to skip detection.
+\code{species} accepts every form that \code{\link[=resolve_species]{resolve_species()}} accepts.}
 
-\item{mapping}{Supply an annotation directly to bypass detection and
-downloading. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype},
-as \code{\link[=fetch_mapping]{fetch_mapping()}} returns; supports local GTFs and custom builds.}
+\item{mapping}{An annotation that you supply directly to bypass detection and
+download. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype}, as
+\code{\link[=fetch_mapping]{fetch_mapping()}} returns. It supports local GTFs and custom builds.}
 
-\item{quiet}{Suppress the message reporting what was detected.}
+\item{quiet}{Do not show the message that reports the detected values.}
 }
 \value{
-A data frame of \code{id}, \code{name}, \code{chr} and \code{biotype}, shaped as
-\code{\link[=mito_genes]{mito_genes()}} returns.
+A data frame of \code{id}, \code{name}, \code{chr} and \code{biotype}, with the same
+shape as the \code{\link[=mito_genes]{mito_genes()}} result.
 }
 \description{
-The set behind a haemoglobin-contamination metric in single-cell work, beside
-\code{\link[=mito_genes]{mito_genes()}} and \code{\link[=ribosomal_genes]{ribosomal_genes()}}. Named per clade: \code{HBA1}/\code{HBB} in
-human, \code{Hba-a1}/\code{Hbb-bs} in mouse, \code{hbaa1}/\code{hbba1} in zebrafish.
+This set gives a hemoglobin-contamination metric in single-cell work. Use it
+beside \code{\link[=mito_genes]{mito_genes()}} and \code{\link[=ribosomal_genes]{ribosomal_genes()}}. The names are different in
+each clade: \code{HBA1}/\code{HBB} in human, \code{Hba-a1}/\code{Hbb-bs} in mouse,
+\code{hbaa1}/\code{hbba1} in zebrafish.
 }
 \details{
-Subunit-letter matching excludes \code{HBEGF}, \code{HBS1L} and \code{HBP1}.
-Requiring \code{protein_coding} also excludes haemoglobin pseudogenes such as
+The subunit-letter match excludes \code{HBEGF}, \code{HBS1L} and \code{HBP1}. The
+\code{protein_coding} condition also excludes hemoglobin pseudogenes such as
 \code{HBAP1}, \code{HBBP1} and \code{HBZP1}.
 }
 \examples{

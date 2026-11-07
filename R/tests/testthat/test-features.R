@@ -405,3 +405,15 @@ test_that("an unknown biotype is caught even when a class is named too", {
     "no biotype protien_coding"
   )
 })
+
+test_that("ids of another species are refused, and undatable ids use the newest release", {
+  skip_no_index()
+  expect_error(mito_genes("ENSMUSG00000051951", species = "human"), "none of the identifiers match")
+  seen <- NULL
+  local_mocked_bindings(fetch_mapping = function(species, release, assembly, source) {
+    seen <<- source
+    nom("TP53")
+  })
+  mito_genes(c("5", "LOC100506145"), species = "human", quiet = TRUE)
+  expect_equal(seen, "ensembl")
+})

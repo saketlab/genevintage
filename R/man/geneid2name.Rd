@@ -3,7 +3,7 @@
 \name{geneid2name}
 \alias{geneid2name}
 \alias{GeneID2Name}
-\title{Convert gene identifiers to gene names, detecting species and release}
+\title{Convert gene identifiers to gene names with species and release detection}
 \usage{
 geneid2name(
   ids,
@@ -32,43 +32,45 @@ GeneID2Name(
 \arguments{
 \item{ids}{Character vector of gene identifiers.}
 
-\item{species}{Skip species detection by naming it. Any form
-\code{\link[=resolve_species]{resolve_species()}} accepts: \code{"homo_sapiens"}, \code{"Homo sapiens"},
-\code{"Human"} or \code{"human"}.}
+\item{species}{Give this value to skip species detection. Any form that
+\code{\link[=resolve_species]{resolve_species()}} accepts: \code{"homo_sapiens"}, \code{"Homo sapiens"}, \code{"Human"}
+or \code{"human"}.}
 
-\item{release}{Skip release detection by naming it.}
+\item{release}{Give this value to skip release detection.}
 
-\item{assembly}{Assembly suffix, e.g. \code{"37"} for human GRCh37. Detected
-alongside the release when both are left \code{NULL}.}
+\item{assembly}{Assembly suffix, for example \code{"37"} for human GRCh37. The
+function detects it together with the release when both are \code{NULL}.}
 
-\item{source}{Annotation family: \code{"ensembl"}, or \code{"gencode"} /
-\code{"gencode_all"} for GENCODE's primary and scaffold-inclusive gene sets.
-Detected alongside the release.}
+\item{source}{Annotation family: \code{"ensembl"}, \code{"gencode"} for the primary
+gene set of GENCODE, or \code{"gencode_all"} for its gene set with scaffolds.
+The function detects it together with the release.}
 
-\item{mapping}{Skip detection and use this \code{id}/\code{name} table, as accepted
-by \code{\link[=gene_names]{gene_names()}}.}
+\item{mapping}{Skip detection and use this \code{id}/\code{name} table, in the form
+that \code{\link[=gene_names]{gene_names()}} accepts.}
 
-\item{unique}{Passed to \code{\link[=gene_names]{gene_names()}}. Defaults to \code{TRUE} when \code{ids} is a
-matrix, sparse \code{Matrix} or data frame, and to \code{FALSE} otherwise.}
+\item{unique}{The function passes this to \code{\link[=gene_names]{gene_names()}}. The default is
+\code{TRUE} when \code{ids} is a matrix, sparse \code{Matrix} or data frame, and \code{FALSE}
+otherwise.}
 
-\item{quiet}{Suppress the message reporting what was detected.}
+\item{quiet}{Do not show the message that reports the detected values. With
+\code{mapping}, also do not give the warnings from \code{\link[=gene_names]{gene_names()}}. Without
+\code{mapping}, these warnings stay, because they can show a wrong detection.}
 
-\item{row_ids}{When \code{ids} is a matrix, sparse \code{Matrix} or data frame,
-overrides which identifiers to detect and map. Defaults to \code{rownames(ids)};
-set this when \code{ids} has none.}
+\item{row_ids}{When \code{ids} is a matrix, sparse \code{Matrix} or data frame, this
+argument overrides the identifiers to detect and map. The default is
+\code{rownames(ids)}. Set this argument when \code{ids} has no row names.}
 }
 \value{
-If \code{ids} is a plain vector: a character vector the same length as
-\code{ids}, carrying \code{mapped}, \code{species}, \code{source}, \code{release} and \code{assembly}
-attributes. If \code{ids} is a matrix, sparse \code{Matrix} or data frame: the same
-object with only its row names replaced by gene names; dimensions, row
-order and other attributes are preserved.
+If \code{ids} is a plain vector, a character vector of the same length as
+\code{ids}, with \code{mapped}, \code{species}, \code{source}, \code{release} and \code{assembly}
+attributes. If \code{ids} is a matrix, sparse \code{Matrix} or data frame, the same
+object with only its row names replaced by gene names. The function keeps
+the dimensions, row order and other attributes.
 }
 \description{
-Detects the species from the identifier prefixes, ranks the Ensembl releases
-consistent with the identifier set, fetches that release's mapping (streamed
-once, then cached) and converts. Identifiers with no gene name are returned
-unchanged.
+This function detects the species from the identifier prefixes. It ranks the
+Ensembl releases that are consistent with the identifier set. It fetches the
+mapping of the best release and converts the identifiers.
 }
 \examples{
 # an excerpt of human Ensembl 116; drop `mapping` to detect and fetch the real one

@@ -30,7 +30,7 @@ test_that("the true release is never ruled out", {
       detect_release(read_golden(truth$file[i]), species = truth$species[i])
     ))
     ok <- out$release == truth$release[i] & out$assembly == truth$assembly[i]
-    skip_if(!any(ok))
+    if (!any(ok)) next # release not indexed; the other fixtures still count
     expect_false(isFALSE(out$feasible[ok][1]), label = truth$file[i])
   }
 })

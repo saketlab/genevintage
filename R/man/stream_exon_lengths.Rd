@@ -3,7 +3,7 @@
 \name{stream_exon_lengths}
 \alias{stream_exon_lengths}
 \alias{StreamExonLengths}
-\title{Exon-union lengths from a GTF, streamed without writing it to disk}
+\title{Stream exon-union lengths from a GTF and write nothing to disk}
 \usage{
 stream_exon_lengths(url, chunk = 1e+05)
 
@@ -12,14 +12,15 @@ StreamExonLengths(url, chunk = 1e+05)
 \arguments{
 \item{url}{A \code{.gtf.gz} URL.}
 
-\item{chunk}{Lines to decompress per iteration.}
+\item{chunk}{Lines to decompress in each iteration.}
 }
 \value{
 A data frame of \code{id} and \code{length} (bases).
 }
 \description{
-Keeps only \code{exon} lines. Gene ids are read from the \code{gene_id} attribute, so a
-GENCODE GTF yields versioned ids, as its \code{gene} lines do in \code{\link[=stream_gtf]{stream_gtf()}}.
+This function keeps only \code{exon} lines. It reads gene identifiers from the
+\code{gene_id} attribute, so a GENCODE GTF gives versioned identifiers, as its
+\code{gene} lines do in \code{\link[=stream_gtf]{stream_gtf()}}.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

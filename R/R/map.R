@@ -18,10 +18,10 @@
   )
 }
 
-#' Suffix colliding names with a token, then guarantee uniqueness
+#' Add a suffix to duplicate names, then make all names unique
 #'
 #' Only resolved entries (`ok`) in a collision receive the `tag` suffix.
-#' [make.unique()] handles any remaining collisions, including unmapped IDs.
+#' [make.unique()] handles the remaining collisions and the unmapped IDs.
 #' @noRd
 .suffix_collisions <- function(out, ok, tag) {
   coll <- (duplicated(out) | duplicated(out, fromLast = TRUE)) & ok
@@ -31,26 +31,30 @@
 
 #' Convert gene identifiers to gene names
 #'
-#' Returns one value per input, in the input's order. An identifier with no
-#' name in `mapping` is returned unchanged, so the result is always usable as
-#' row labels.
+#' This function returns one value for each input, in the order of the input. It
+#' returns an identifier with no name in `mapping` unchanged, so you can
+#' use the result as row labels.
 #'
-#' Version suffixes are ignored when matching, so `ENSG00000141510.16` resolves
-#' against an unversioned mapping and the other way round.
+#' The function ignores version suffixes when it matches.
+#' `ENSG00000141510.16` resolves against an unversioned mapping. A versioned
+#' mapping also resolves an unversioned identifier.
 #'
 #' @param ids Character vector of gene identifiers.
 #' @param mapping A data frame with `id` and `name` columns, or a named
 #'   character vector of names indexed by identifier.
-#' @param unique Make the result unique by appending the identifier to names
-#'   that would otherwise collide. Off by default, since it changes names.
-#' @param warn Warn when names collide or when little of the input mapped. The
-#'   collision warning carries class `genevintage_duplicate_names`, so a caller
-#'   that disambiguates downstream can catch and muffle just that one.
+#' @param unique Make the result unique. The function appends the identifier to
+#'   names that otherwise collide. This is off by default, because it changes
+#'   names.
+#' @param warn Give a warning when names collide or when little of the input
+#'   mapped. The collision warning has class `genevintage_duplicate_names`.
+#'   A caller that disambiguates downstream can catch and muffle only that
+#'   warning.
 #'
-#' @return A character vector the same length as `ids`, carrying a `mapped`
-#'   attribute: the logical vector of which inputs found a real name.
+#' @return A character vector with the same length as `ids`, with a `mapped`
+#'   attribute. This attribute is the logical vector of the inputs that found a
+#'   real name.
 #'
-#' @seealso [fetch_mapping()] to obtain `mapping` for a species and release.
+#' @seealso [fetch_mapping()] to get `mapping` for a species and release.
 #' @export
 #' @examples
 #' m <- data.frame(

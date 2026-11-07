@@ -28,54 +28,63 @@ Transcript2Gene(
 \arguments{
 \item{ids}{Character vector of transcript identifiers.}
 
-\item{species}{Skip species detection by naming it. Any form
-\code{\link[=resolve_species]{resolve_species()}} accepts: \code{"homo_sapiens"}, \code{"Homo sapiens"},
-\code{"Human"} or \code{"human"}.}
+\item{species}{Give this value to skip species detection. Any form that
+\code{\link[=resolve_species]{resolve_species()}} accepts: \code{"homo_sapiens"}, \code{"Homo sapiens"}, \code{"Human"}
+or \code{"human"}.}
 
-\item{release}{Annotation release. Without it, chosen as above.}
+\item{release}{Annotation release. Without it, the function selects a release
+as the details describe.}
 
-\item{assembly}{Assembly suffix, e.g. \code{"37"} for human GRCh37. Detected
-alongside the release when both are left \code{NULL}.}
+\item{assembly}{Assembly suffix, for example \code{"37"} for human GRCh37. The
+function detects it together with the release when both are \code{NULL}.}
 
-\item{source}{Annotation family: \code{"ensembl"}, or \code{"gencode"} /
-\code{"gencode_all"} for GENCODE's primary and scaffold-inclusive gene sets.
-Detected alongside the release.}
+\item{source}{Annotation family: \code{"ensembl"}, \code{"gencode"} for the primary
+gene set of GENCODE, or \code{"gencode_all"} for its gene set with scaffolds.
+The function detects it together with the release.}
 
-\item{mapping}{Skip fetching and use this table: \code{\link[=fetch_transcripts]{fetch_transcripts()}}
+\item{mapping}{Do not fetch a table. Use this table: \code{\link[=fetch_transcripts]{fetch_transcripts()}}
 output, or a data frame with \code{transcript_id}, \code{gene_id} and \code{gene_name}.}
 
-\item{quiet}{Suppress the message reporting what was detected.}
+\item{quiet}{Do not show the message that reports the detected values.}
 }
 \value{
-A data frame with one row per input, in order: \code{input},
+A data frame with one row for each input, in order: \code{input},
 \code{transcript_id} (as the annotation writes it), \code{gene_id} and \code{gene_name}.
-Unmapped inputs have \code{NA} in the last three. A gene without a name has its
-identifier as \code{gene_name}. Attributes \code{species}, \code{source}, \code{release} and
-\code{assembly} record the annotation used.
+Unmapped inputs have \code{NA} in the last three columns. A gene without a name
+has its identifier as \code{gene_name}. The attributes \code{species}, \code{source},
+\code{release} and \code{assembly} record the annotation that the function used.
 }
 \description{
-Detects the species from the identifier prefix (\code{ENSMUST}, \code{ENSGALT}, ...),
-fetches the annotation's transcript table (streamed once, then cached) and
-returns each transcript's gene identifier and gene name. Version suffixes
-are ignored when matching, so \code{ENSMUST00000178537.2} resolves against an
-unversioned annotation and the other way round.
+This function detects the species from the identifier prefix (\code{ENSMUST},
+\code{ENSGALT}, ...). It fetches the transcript table of the annotation (streamed
+once, then cached). It returns the gene identifier and gene name of each
+transcript. It ignores version suffixes when it matches, so
+\code{ENSMUST00000178537.2} resolves against an unversioned annotation. A
+versioned annotation also resolves an unversioned identifier.
 }
 \details{
-Without \code{release}, \code{\link[=detect_release]{detect_release()}} dates the transcript identifiers
-against a transcript fingerprint index of Ensembl and GENCODE for the
-commonly quantified species. \code{source} and \code{assembly} narrow the candidates.
+Without \code{release}, \code{\link[=detect_release]{detect_release()}} finds the release of the transcript
+identifiers. It uses a transcript fingerprint index of Ensembl and GENCODE
+for the commonly quantified species. \code{source} and \code{assembly} narrow the
+candidates.
 
-When the best-scoring release leaves any id unmapped, the best release of
-each other annotation family (Ensembl, GENCODE, GENCODE ALL) is fetched too
-and the best-covering one kept: a filtered transcriptome (cDNA only) dates by
-its newest id but leaves its family open.
+If the release with the best score leaves an identifier unmapped, the
+function also fetches the best release of each other annotation family. These
+families are Ensembl, GENCODE and GENCODE ALL. It keeps the release with the
+best coverage. A filtered transcriptome (cDNA only) gets its release from its
+newest identifier, but its family stays open.
 
-A species outside that index, a set too small to date (a handful of ids),
-or dated releases explaining less than 90\% of the input fall back to
-coverage: the newest Ensembl release of each assembly is tried,
-newest first, and the best-covering one kept. Chicken
-needs this: GRCg7b (release 107 on) renumbered every identifier, so GRCg6a
-transcripts only map at release 106 or earlier.
+Three conditions make the function use coverage:
+\itemize{
+\item The species is outside that index.
+\item The set is too small to find a release.
+\item The detected releases explain less than 90\% of the input.
+}
+
+For coverage, the function tries the newest Ensembl release of each assembly,
+newest first. It keeps the release with the best coverage. Chicken needs this
+method. GRCg7b (release 107 and later) renumbered every identifier, so GRCg6a
+transcripts map only at release 106 or earlier.
 }
 \examples{
 tx <- data.frame(

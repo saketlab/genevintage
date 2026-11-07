@@ -1,5 +1,3 @@
-# Naming a species: Ensembl's own name, its common name, or a shorthand.
-
 .species_tbl <- .once(function() {
   f <- .extdata("species_names.rds")
   if (!file.exists(f)) {
@@ -13,9 +11,9 @@
   readRDS(f)
 })
 
-#' A user-supplied name, or a message saying why it cannot be one
+#' A name from the user, or a message that gives the reason it is not valid
 #'
-#' Validate scalar names at public entry points; `.norm_name()` also handles
+#' Validate scalar names at public entry points. `.norm_name()` also handles
 #' vectors from the species table.
 #' @noRd
 .as_name <- function(x, arg) {
@@ -64,19 +62,20 @@ SPECIES_ALIASES <- c(
 
 #' Resolve a species name
 #'
-#' Accepts the Ensembl name (`"homo_sapiens"`), the scientific name
-#' (`"Homo sapiens"`), Ensembl's display name (`"Zebrafish"`, `"Giant panda"`)
-#' or a common shorthand (`"human"`, `"mouse"`, `"rat"`, `"fly"`, `"yeast"`).
-#' Matching ignores case, punctuation and underscores.
+#' This function accepts the Ensembl name (`"homo_sapiens"`), the scientific
+#' name (`"Homo sapiens"`) or the Ensembl display name (`"Zebrafish"`,
+#' `"Giant panda"`). It also accepts a common short name (`"human"`, `"mouse"`,
+#' `"rat"`, `"fly"`, `"yeast"`). The match ignores case, punctuation and
+#' underscores.
 #'
-#' An unambiguous partial match is accepted and reported; an ambiguous one is
-#' refused with the candidates. The `"mouse"` alias selects `mus_musculus`
-#' even when strain genomes also match the word.
+#' The function accepts and reports an unambiguous partial match. It refuses an
+#' ambiguous partial match and shows the candidates. The `"mouse"` alias selects
+#' `mus_musculus` even when strain genomes also match the word.
 #'
-#' @param x A species name in any of the accepted forms.
-#' @param quiet Suppress the message reporting a partial match.
+#' @param x A species name in one of the accepted forms.
+#' @param quiet Do not show the message that reports a partial match.
 #'
-#' @return The Ensembl species name, e.g. `"homo_sapiens"`.
+#' @return The Ensembl species name, for example `"homo_sapiens"`.
 #' @export
 #' @examples
 #' resolve_species("human")
@@ -128,8 +127,8 @@ resolve_species <- function(x, quiet = FALSE) {
 
 #' Species the index covers, with their common names
 #'
-#' @param pattern Optional: keep only species whose Ensembl or common name
-#'   matches, ignoring case and punctuation.
+#' @param pattern Optional. Keep only species whose Ensembl name or common name
+#'   matches. The match ignores case and punctuation.
 #'
 #' @return A data frame of `species`, `common`, `taxonomy_id` and `division`.
 #' @export

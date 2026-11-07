@@ -26,21 +26,24 @@ DetectSpeciesNames(
 
 \item{index}{A symbol index from \code{\link[=build_symbol_index]{build_symbol_index()}}.}
 
-\item{min_overlap}{Minimum informative symbols required.}
+\item{min_overlap}{Minimum number of informative symbols that a result must
+have.}
 
 \item{min_score}{Minimum weighted overlap fraction.}
 
-\item{min_margin}{Required score gap between the top two candidates.}
+\item{min_margin}{Necessary score gap between the top two candidates.}
 }
 \value{
-Ranked data frame with \code{species}, \code{release}, \code{score}, \code{overlap},
-\code{margin}, and \code{status}.
+A ranked data frame with \code{species}, \code{release}, \code{assembly}, \code{source},
+\code{overlap}, \code{score}, \code{margin}, and \code{status}. \code{margin} is \code{NA} after the first
+row. The data frame is empty when no symbol is informative.
 }
 \description{
-Scores each indexed species/release by informative symbol overlap. Common
-symbols are downweighted and Excel-prone date-like symbols are excluded.
-Results below the overlap or score threshold have \code{status = "insufficient"};
-remaining results are \code{"ambiguous"} unless the top candidate meets the margin.
+This function scores each indexed species and release by informative symbol
+overlap. Common symbols get a lower weight. The function excludes date-like
+symbols that Excel can change. Results less than the overlap or score
+threshold have \code{status = "insufficient"}. If the top candidate meets the
+margin, its status is \code{"selected"}. The remaining results are \code{"ambiguous"}.
 }
 \examples{
 hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))

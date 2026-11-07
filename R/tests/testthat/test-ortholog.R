@@ -260,3 +260,16 @@ test_that("a pair genuinely absent from both files is an empty answer", {
   expect_equal(nrow(out), 0L)
   expect_true(all(c("id", "ortholog_id") %in% names(out)))
 })
+
+test_that("digit and LOC symbols are names, so they are not dropped as ids", {
+  m <- nom("TP53", "5", "LOC100506145")
+  testthat::local_mocked_bindings(
+    .mapping_for = function(...) m,
+    fetch_orthologs = function(...) {
+      data.frame(id = m$id, ortholog_id = paste0("o", 1:3), homology_type = "ortholog_one2one")
+    }
+  )
+  out <- orthologs(m$name, to = "mouse", species = "human", release = "116", names = FALSE, quiet = TRUE)
+  expect_equal(nrow(out), 3L)
+  expect_error(orthologs(c("TP53", "5"), to = "mouse"), "pass `species`")
+})

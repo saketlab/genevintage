@@ -27,29 +27,30 @@ rRNAGenes(
 }
 \arguments{
 \item{ids}{Optional character vector of gene identifiers or gene names. When
-given, the species and release are detected from them and only these genes
-are considered. When omitted, \code{species} must be named and the whole
-mitochondrial gene set for its newest indexed release is returned.}
+you give \code{ids}, the function detects the species and release from them and
+examines only these genes. When you omit \code{ids}, you must name \code{species}.
+The function then returns the full mitochondrial gene set for the newest
+indexed release of that species.}
 
-\item{species, release, assembly, source}{Skip detection by naming them.
-\code{species} accepts anything \code{\link[=resolve_species]{resolve_species()}} does.}
+\item{species, release, assembly, source}{Give these values to skip detection.
+\code{species} accepts every form that \code{\link[=resolve_species]{resolve_species()}} accepts.}
 
-\item{mapping}{Supply an annotation directly to bypass detection and
-downloading. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype},
-as \code{\link[=fetch_mapping]{fetch_mapping()}} returns; supports local GTFs and custom builds.}
+\item{mapping}{An annotation that you supply directly to bypass detection and
+download. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype}, as
+\code{\link[=fetch_mapping]{fetch_mapping()}} returns. It supports local GTFs and custom builds.}
 
-\item{quiet}{Suppress the message reporting what was detected.}
+\item{quiet}{Do not show the message that reports the detected values.}
 }
 \value{
-A data frame of \code{id}, \code{name}, \code{chr} and \code{biotype}, shaped as
-\code{\link[=mito_genes]{mito_genes()}} returns.
+A data frame of \code{id}, \code{name}, \code{chr} and \code{biotype}, with the same
+shape as the \code{\link[=mito_genes]{mito_genes()}} result.
 }
 \description{
-The RNA components of the ribosome, by biotype: \code{rRNA} in the nucleus and
-\code{Mt_rRNA} in the mitochondrion.
+These genes are the RNA components of the ribosome, by biotype: \code{rRNA} in the
+nucleus and \code{Mt_rRNA} in the mitochondrion.
 }
 \details{
-\code{rRNA_pseudogene} belongs with the pseudogenes. Ask for it with
+\code{rRNA_pseudogene} belongs with the pseudogenes. To get it, use
 \code{genes_by_biotype("rRNA_pseudogene")}.
 }
 \examples{
@@ -60,5 +61,6 @@ rrna_genes(species = "human")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=ribosomal_genes]{ribosomal_genes()}} for the ribosome's \emph{proteins}, \code{\link[=trna_genes]{trna_genes()}}.
+\code{\link[=ribosomal_genes]{ribosomal_genes()}} for the \emph{proteins} of the ribosome,
+\code{\link[=trna_genes]{trna_genes()}}.
 }

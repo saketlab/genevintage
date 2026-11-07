@@ -32,51 +32,55 @@ AggregateTranscripts(
 )
 }
 \arguments{
-\item{x}{A numeric matrix, sparse \code{Matrix} or data frame whose rows are
-transcripts.}
+\item{x}{A numeric matrix, sparse \code{Matrix} or data frame with transcripts as
+rows.}
 
-\item{species}{Skip species detection by naming it. Any form
-\code{\link[=resolve_species]{resolve_species()}} accepts: \code{"homo_sapiens"}, \code{"Homo sapiens"},
-\code{"Human"} or \code{"human"}.}
+\item{species}{Give this value to skip species detection. Any form that
+\code{\link[=resolve_species]{resolve_species()}} accepts: \code{"homo_sapiens"}, \code{"Homo sapiens"}, \code{"Human"}
+or \code{"human"}.}
 
-\item{release}{Annotation release. Without it, chosen as above.}
+\item{release}{Annotation release. Without it, the function selects a release
+as the details describe.}
 
-\item{assembly}{Assembly suffix, e.g. \code{"37"} for human GRCh37. Detected
-alongside the release when both are left \code{NULL}.}
+\item{assembly}{Assembly suffix, for example \code{"37"} for human GRCh37. The
+function detects it together with the release when both are \code{NULL}.}
 
-\item{source}{Annotation family: \code{"ensembl"}, or \code{"gencode"} /
-\code{"gencode_all"} for GENCODE's primary and scaffold-inclusive gene sets.
-Detected alongside the release.}
+\item{source}{Annotation family: \code{"ensembl"}, \code{"gencode"} for the primary
+gene set of GENCODE, or \code{"gencode_all"} for its gene set with scaffolds.
+The function detects it together with the release.}
 
-\item{mapping}{Skip fetching and use this table: \code{\link[=fetch_transcripts]{fetch_transcripts()}}
+\item{mapping}{Do not fetch a table. Use this table: \code{\link[=fetch_transcripts]{fetch_transcripts()}}
 output, or a data frame with \code{transcript_id}, \code{gene_id} and \code{gene_name}.}
 
-\item{row_ids}{Overrides which identifiers to map. Defaults to \code{rownames(x)};
-set this when \code{x} has none.}
+\item{row_ids}{This argument overrides the identifiers to map. The default is
+\code{rownames(x)}. Set this argument when \code{x} has no row names.}
 
-\item{label}{Label gene rows by \code{"id"} (the gene identifier) or \code{"name"}
-(the gene name, with the identifier appended where two genes share one).}
+\item{label}{Label gene rows by \code{"id"} (the gene identifier) or \code{"name"} (the
+gene name, with the identifier appended where two genes share one).}
 
 \item{unmapped}{\code{"keep"} leaves unmapped rows under their own identifier, as
-\code{\link[=geneid2name]{geneid2name()}} keeps an identifier it cannot name; \code{"drop"} removes them.}
+\code{\link[=geneid2name]{geneid2name()}} keeps an identifier that it cannot name. \code{"drop"} removes
+them.}
 
-\item{quiet}{Suppress the messages reporting the annotation and how many rows
-mapped.}
+\item{quiet}{Do not show the messages about the annotation and the number of
+mapped rows.}
 }
 \value{
-\code{x} with one row per gene. A warning of class
-\code{genevintage_unmapped_transcripts} is raised when fewer than half the rows
-mapped; call \code{\link[=transcript2gene]{transcript2gene()}} and pass its result as \code{mapping} to see
-which ones.
+\code{x} with one row for each gene. The function gives a warning of class
+\code{genevintage_unmapped_transcripts} when fewer than half of the rows mapped.
+To see which rows, call \code{\link[=transcript2gene]{transcript2gene()}} and pass its result as
+\code{mapping}.
 }
 \description{
-Maps each row's transcript identifier with \code{\link[=transcript2gene]{transcript2gene()}} and sums the
-rows of each gene. Rows come back in the order their gene was first seen. Columns,
-column names and the matrix class (dense, sparse \code{Matrix}, data frame) are
-kept.
+This function maps the transcript identifier of each row with
+\code{\link[=transcript2gene]{transcript2gene()}} and sums the rows of each gene. The rows of the result
+are in the order of the first occurrence of each gene. The function keeps
+columns, column names and the matrix class (dense, sparse \code{Matrix}, data
+frame).
 }
 \details{
-Summing is right for counts and for TPM; it is not for effective lengths.
+A sum is correct for counts and for TPM. A sum is not correct for effective
+lengths.
 }
 \examples{
 tx <- data.frame(

@@ -30,28 +30,31 @@ GeneIDs(
 \arguments{
 \item{x}{Gene names, or Entrez identifiers.}
 
-\item{from}{What \code{x} holds: \code{"name"}, \code{"entrez"}, or \code{"auto"} to decide from
-the input. All-digit input is Entrez; anything else is a name.}
+\item{from}{What \code{x} contains: \code{"name"}, \code{"entrez"}, or \code{"auto"} to decide
+from the input. Input with only digits is Entrez. All other input is a
+name.}
 
-\item{species, release, assembly, source}{Skip detection by naming them.
-\code{species} accepts anything \code{\link[=resolve_species]{resolve_species()}} does.}
+\item{species, release, assembly, source}{Give these values to skip detection.
+\code{species} accepts every form that \code{\link[=resolve_species]{resolve_species()}} accepts.}
 
-\item{mapping}{Supply an annotation directly to bypass detection and
-downloading. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype},
-as \code{\link[=fetch_mapping]{fetch_mapping()}} returns; supports local GTFs and custom builds.}
+\item{mapping}{An annotation that you supply directly to bypass detection and
+download. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype}, as
+\code{\link[=fetch_mapping]{fetch_mapping()}} returns. It supports local GTFs and custom builds.}
 
-\item{quiet}{Suppress the message reporting what was detected.}
+\item{quiet}{Do not show the message that reports the detected values.}
 }
 \value{
-A data frame of \code{input}, \code{id} and \code{name}, one row per match.
+A data frame of \code{input}, \code{id} and \code{name}, one row for each match.
 }
 \description{
-The reverse of \code{\link[=gene_names]{gene_names()}}. Published marker lists and enrichment results
-carry symbols or Entrez identifiers; count matrices carry Ensembl ones.
+This function is the reverse of \code{\link[=gene_names]{gene_names()}}. Published marker lists and
+enrichment results contain gene names or Entrez identifiers. Count matrices
+contain Ensembl identifiers.
 }
 \details{
-Symbols and Entrez identifiers can each match multiple genes, so the table
-returns every match. Unmatched inputs are retained with \code{id = NA}.
+Gene names and Entrez identifiers can each match more than one gene, so the
+table contains every match. The function keeps unmatched inputs with
+\code{id = NA}.
 }
 \examples{
 hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))

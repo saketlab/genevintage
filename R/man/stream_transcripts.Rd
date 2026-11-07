@@ -3,7 +3,7 @@
 \name{stream_transcripts}
 \alias{stream_transcripts}
 \alias{StreamTranscripts}
-\title{Transcript-to-gene records from a GTF, streamed without writing it to disk}
+\title{Stream transcript-to-gene records from a GTF}
 \usage{
 stream_transcripts(url, chunk = 1e+05)
 
@@ -12,17 +12,19 @@ StreamTranscripts(url, chunk = 1e+05)
 \arguments{
 \item{url}{A \code{.gtf.gz} URL.}
 
-\item{chunk}{Lines to decompress per iteration.}
+\item{chunk}{Lines to decompress in each iteration.}
 }
 \value{
 A data frame of \code{transcript_id}, \code{id} (the gene) and \code{name} (the gene
-name, \code{NA} where the annotation gives none). Identifiers keep whatever
-version suffix the GTF writes: GENCODE versions them, Ensembl does not.
+name, \code{NA} where the annotation gives none). Identifiers keep the version
+suffix that the GTF writes. GENCODE gives them versions, and Ensembl does
+not.
 }
 \description{
-Keeps \code{transcript} lines. GTFs before Ensembl release 75 have none, so a
-chunk without them is read from its exon and CDS lines, which carry the same
-\code{transcript_id}, \code{gene_id} and \code{gene_name}; duplicates are dropped.
+This function keeps \code{transcript} lines. GTFs before Ensembl release 75 do not
+have these lines. For a chunk without them, the function reads the exon and
+CDS lines, which contain the same \code{transcript_id}, \code{gene_id} and \code{gene_name}.
+It removes duplicates.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

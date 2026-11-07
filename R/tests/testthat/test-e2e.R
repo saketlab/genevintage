@@ -6,7 +6,11 @@ test_that("geneid2name detects, fetches and converts", {
   skip_if(!"saccharomyces_cerevisiae" %in% .fp()$species)
 
   ids <- c("YDL246C", "YDR387C", "NOT_A_GENE")
-  out <- geneid2name(ids, species = "saccharomyces_cerevisiae", release = 63, quiet = TRUE)
+  # quiet keeps this warning: most yeast ORF ids have no symbol
+  expect_warning(
+    out <- geneid2name(ids, species = "saccharomyces_cerevisiae", release = 63, quiet = TRUE),
+    "of ids mapped"
+  )
   expect_length(out, 3)
   expect_equal(as.vector(out)[3], "NOT_A_GENE")
   expect_equal(attr(out, "species"), "saccharomyces_cerevisiae")
@@ -42,10 +46,10 @@ test_that("an explicitly named source is honoured, not overwritten by detection"
   r <- suppressWarnings(suppressMessages(detect_release(ids, species = "human")))
   expect_equal(r$source[1], "gencode")
   expect_error(
-    geneid2name(head(ids, 100),
+    suppressWarnings(geneid2name(head(ids, 100),
       species = "human", source = "no_such_source",
       quiet = TRUE
-    ),
+    )),
     "no no_such_source release is indexed"
   )
 })

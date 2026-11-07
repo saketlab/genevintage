@@ -27,30 +27,31 @@ tRNAGenes(
 }
 \arguments{
 \item{ids}{Optional character vector of gene identifiers or gene names. When
-given, the species and release are detected from them and only these genes
-are considered. When omitted, \code{species} must be named and the whole
-mitochondrial gene set for its newest indexed release is returned.}
+you give \code{ids}, the function detects the species and release from them and
+examines only these genes. When you omit \code{ids}, you must name \code{species}.
+The function then returns the full mitochondrial gene set for the newest
+indexed release of that species.}
 
-\item{species, release, assembly, source}{Skip detection by naming them.
-\code{species} accepts anything \code{\link[=resolve_species]{resolve_species()}} does.}
+\item{species, release, assembly, source}{Give these values to skip detection.
+\code{species} accepts every form that \code{\link[=resolve_species]{resolve_species()}} accepts.}
 
-\item{mapping}{Supply an annotation directly to bypass detection and
-downloading. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype},
-as \code{\link[=fetch_mapping]{fetch_mapping()}} returns; supports local GTFs and custom builds.}
+\item{mapping}{An annotation that you supply directly to bypass detection and
+download. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype}, as
+\code{\link[=fetch_mapping]{fetch_mapping()}} returns. It supports local GTFs and custom builds.}
 
-\item{quiet}{Suppress the message reporting what was detected.}
+\item{quiet}{Do not show the message that reports the detected values.}
 }
 \value{
-A data frame of \code{id}, \code{name}, \code{chr} and \code{biotype}, shaped as
-\code{\link[=mito_genes]{mito_genes()}} returns.
+A data frame of \code{id}, \code{name}, \code{chr} and \code{biotype}, with the same
+shape as the \code{\link[=mito_genes]{mito_genes()}} result.
 }
 \description{
 Ensembl names them \code{Mt_tRNA} on the mitochondrial chromosome and \code{tRNA} in
-the nucleus. Which of those an annotation actually contains varies: the
-vertebrate GTFs carry only the mitochondrial tRNAs, since nuclear tRNA genes
-are predicted separately and lie outside the gene set. Invertebrate, fungal
-and plant annotations include the nuclear ones. The \code{chr} and \code{biotype}
-columns say which kind each row is.
+the nucleus. Different annotations contain different kinds. The vertebrate
+GTFs contain only the mitochondrial tRNAs. Nuclear tRNA genes in vertebrates
+come from a separate prediction and are outside the gene set. Invertebrate,
+fungal and plant annotations include the nuclear tRNAs. The \code{chr} and
+\code{biotype} columns tell the kind of each row.
 }
 \examples{
 hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))

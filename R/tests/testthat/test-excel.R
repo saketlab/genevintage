@@ -36,7 +36,8 @@ test_that("date-like spelling variants are recognised", {
   for (tok in c(
     "9-Sep", "Sep-09", "09-Sep", "sept-09", "9/Sep", "09.Sep",
     "Sep 9", "9-Sep-2019", "'9-Sep'", "2019-09-09",
-    "9/9/2019", "09.09.2019", "9-Sep-2019 10:30"
+    "9/9/2019", "09.09.2019", "9-Sep-2019 00:00", "9/9/2019 0:00", "9/9/2019 12:00:00 AM",
+    "2019/9/9"
   )) {
     expect_equal(as.vector(correct_genenames(tok, mapping = new_nom, quiet = TRUE)),
       "SEPTIN9",
@@ -346,4 +347,76 @@ test_that("MARCH1 and MARC1 collide on 1-Mar, and an undamaged row resolves it",
   # both damaged: two identical tokens, nothing tells them apart
   out <- suppressWarnings(correct_genenames(c("1-Mar", "1-Mar"), mapping = m, quiet = TRUE))
   expect_equal(as.vector(out), c("1-Mar", "1-Mar"))
+})
+
+test_that("a list of numbers is not read as dates", {
+  x <- c("42248", "7157", "672", "42249")
+  out <- correct_genenames(x, mapping = new_nom, quiet = TRUE)
+  expect_equal(as.vector(out), x)
+  expect_false(any(attr(out, "corrected")))
+  coords <- c("3/1/10", "3/1/11", "3/2/10", "TP53")
+  out <- correct_genenames(coords, mapping = new_nom, quiet = TRUE)
+  expect_equal(as.vector(out), coords)
+  expect_equal(attr(out, "skipped"), coords[1:3])
+  # placeholders are not numbers
+  expect_equal(as.vector(correct_genenames(c(".", ".", "TP53", "43352"), mapping = new_nom, quiet = TRUE))[4], "SEPTIN9")
+})
+
+test_that("labels that only resemble dates are left alone", {
+  m <- nom("AGO1", "MARCHF3", "SELENOF", "SEPTIN9")
+  # make.unique() suffixes, an immunoglobulin segment, a report date
+  x <- c("ago.1", "Mars.3", "AGO-1", "mrt-4", "7183.9.15", "Sep 9, 2019", "TP53")
+  out <- correct_genenames(x, mapping = m, quiet = TRUE)
+  expect_equal(as.vector(out), x)
+  expect_false(any(attr(out, "corrected")))
+  expect_length(attr(out, "unresolved"), 0L)
+})
+
+test_that("a letter that only folds to a month does not abort the vector", {
+  x <- c("\u017fep-1", "9-Sep")
+  expect_equal(as.vector(correct_genenames(x, mapping = new_nom, quiet = TRUE))[2], "SEPTIN9")
+})
+
+test_that("a date with a real time of day is not a symbol", {
+  tok <- "2018/09/01 10:32:31"
+  out <- correct_genenames(tok, mapping = new_nom, quiet = TRUE)
+  expect_equal(as.vector(out), tok)
+  expect_false(attr(out, "corrected"))
+  expect_length(attr(out, "unresolved"), 0L)
+})
+
+test_that("locale months are read and can also be typed symbols", {
+  m <- nom("MARCHF2", "MARS2", "AGO1", "SEPTIN9")
+  out <- suppressWarnings(correct_genenames(c("ago-01", "mars-02", "TP53"), mapping = m, quiet = TRUE))
+  expect_equal(as.vector(out), c("AGO1", "mars-02", "TP53"))
+  expect_equal(attr(out, "ambiguous"), "mars-02")
+  out <- correct_genenames(c("mars-02", "MARS2"), mapping = m, quiet = TRUE)
+  expect_equal(as.vector(out), c("MARCHF2", "MARS2"))
+  out <- correct_genenames("mei-01", mapping = m, quiet = TRUE)
+  expect_equal(attr(out, "unresolved"), "mei-01")
+})
+
+test_that("a token that is itself a symbol is left alone", {
+  worm <- nom("ago-1", "sep-1")
+  out <- correct_genenames(c("ago-1", "sep-1"), mapping = worm, quiet = TRUE)
+  expect_equal(as.vector(out), c("ago-1", "sep-1"))
+  expect_length(attr(out, "unresolved"), 0L)
+})
+
+test_that("numeric symbols among gene names do not stop a species-only repair", {
+  skip_no_index()
+  local_mocked_bindings(fetch_mapping = function(...) new_nom)
+  x <- c("5", "LOC100506145", "TP53", "9-Sep", "7157")
+  out <- correct_genenames(x, species = "human", quiet = TRUE)
+  expect_equal(as.vector(out)[4], "SEPTIN9")
+})
+
+test_that("a list of one month over several years carries the gene number in the year", {
+  m <- nom("SEPTIN1", "SEPTIN3", "SEPTIN6", "TP53")
+  genes <- c("TP53", "MYC", "GAPDH", "ACTB")
+  x <- c("2003-09-01 00:00:00", "2006-09-01 00:00:00", "2001-09-01", genes)
+  expect_equal(as.vector(correct_genenames(x, mapping = m, quiet = TRUE)), c("SEPTIN3", "SEPTIN6", "SEPTIN1", genes))
+  # a single year is the year of conversion, so the day is the gene number
+  y <- c("2016-09-01 00:00:00", "2016-09-03 00:00:00", genes)
+  expect_equal(as.vector(correct_genenames(y, mapping = m, quiet = TRUE)), c("SEPTIN1", "SEPTIN3", genes))
 })

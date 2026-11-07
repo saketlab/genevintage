@@ -28,44 +28,46 @@ Orthologs(
 )
 }
 \arguments{
-\item{ids}{Character vector of gene identifiers or gene names. A symbol can
-label multiple genes, so all matches are included. Supply \code{species} for
-input containing only names.}
+\item{ids}{Character vector of gene identifiers or gene names. A gene name
+can label more than one gene, so the function includes all matches. Supply
+\code{species} for input that contains only names.}
 
-\item{to}{Species to find orthologs in, in any form \code{\link[=resolve_species]{resolve_species()}}
+\item{to}{Species to find orthologs in, in any form that \code{\link[=resolve_species]{resolve_species()}}
 accepts: \code{"mus_musculus"}, \code{"Mouse"} or \code{"mouse"}.}
 
-\item{species, release}{Skip detection by naming them.}
+\item{species, release}{Give these values to skip detection.}
 
 \item{one2one}{Keep only one-to-one orthologs. See details.}
 
-\item{names}{Also look up gene names for both sides of the pair, which costs
-a streamed mapping for each species. Both are named from the same Ensembl
-release, so the two halves of a row describe one vintage.}
+\item{names}{Also look up gene names for the two sides of the pair. This
+costs a streamed mapping for each species. The function names the two sides
+from the same Ensembl release, so the two halves of a row describe one
+release.}
 
-\item{kind}{Passed to \code{\link[=fetch_orthologs]{fetch_orthologs()}}.}
+\item{kind}{The function passes this to \code{\link[=fetch_orthologs]{fetch_orthologs()}}.}
 
-\item{quiet}{Suppress the message reporting what was detected.}
+\item{quiet}{Do not show the message that reports the detected values.}
 }
 \value{
-A data frame with one row per ortholog relationship: \code{id} and \code{name}
-for the query gene, \code{ortholog_id} and \code{ortholog_name} for its counterpart
-in \code{to} (the two name columns when \code{names}), then \code{homology_type},
-\code{identity}, \code{ortholog_identity} and \code{high_confidence}. Identifiers with no
-ortholog in \code{to} are absent, so the result is usually shorter than \code{ids}.
+A data frame with one row for each ortholog relationship. \code{id} and
+\code{name} describe the query gene. \code{ortholog_id} and \code{ortholog_name} describe
+its counterpart in \code{to}. The two name columns are present when \code{names} is
+\code{TRUE}. The other columns are \code{homology_type}, \code{identity},
+\code{ortholog_identity} and \code{high_confidence}. Identifiers with no ortholog in
+\code{to} are absent, so the result is usually shorter than \code{ids}.
 }
 \description{
-Detects the species from identifiers and defaults to its newest indexed
-Ensembl release. Fetches that release's Compara orthologs against \code{to}
-(streamed once, then cached) and returns the orthologous identifiers with
-their gene names.
+This function detects the species from identifiers. The default release is
+the newest indexed Ensembl release of that species. The function fetches the
+Compara orthologs of that release against \code{to} (streamed once, then cached).
+It returns the orthologous identifiers with their gene names.
 }
 \details{
 A gene can have several orthologs or none. With \code{one2one = TRUE} (the
-default) only one-to-one orthologs are returned, so
-there is at most one row per input identifier and the result can be used
-directly as a lookup. Set it to \code{FALSE} to see one-to-many and many-to-many
-relationships as well.
+default), the function returns only one-to-one orthologs. There is a
+maximum of one row for each input identifier, and you can use the result
+directly as a lookup. Set it to \code{FALSE} to also see one-to-many and
+many-to-many relationships.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

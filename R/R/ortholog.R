@@ -79,14 +79,14 @@
 
 #' Stream one species' orthologs against one other species
 #'
-#' Filters the Compara stream in chunks to retain orthologs for the requested
-#' target species, limiting memory to the selected pair.
+#' This function filters the Compara stream in chunks and keeps the orthologs
+#' for the requested target species. This limits memory to the selected pair.
 #'
 #' @param url A Compara `homologies.tsv.gz` URL.
-#' @param to Ensembl species name to keep, e.g. `"mus_musculus"`.
-#' @param swap Reverse the pair when reading it from the target species' file,
-#'   including the direction of one-to-many relationships.
-#' @param chunk Lines to decompress per iteration.
+#' @param to Ensembl species name to keep, for example `"mus_musculus"`.
+#' @param swap Reverse the pair when you read it from the file of the target
+#'   species. This includes the direction of one-to-many relationships.
+#' @param chunk Lines to decompress in each iteration.
 #' @return A data frame of `id`, `ortholog_id`, `homology_type`, `identity`,
 #'   `ortholog_identity`, `high_confidence`.
 #' @examplesIf interactive()
@@ -223,12 +223,12 @@ stream_homologies <- function(url, to, swap = FALSE, chunk = 200000) {
 
 #' Species Compara publishes homologies for
 #'
-#' Lists the species with Compara files for a release and division so callers
-#' can check availability before streaming a pair.
+#' This function lists the species with Compara files for a release and
+#' division. Use it to examine availability before you stream a pair.
 #'
-#' @param release Ensembl release number. Under Ensembl Genomes, that division's
-#'   own release number.
-#' @param division Which division's Compara to list. Defaults to vertebrates.
+#' @param release Ensembl release number. Under Ensembl Genomes, the release
+#'   number of that division.
+#' @param division The division of Compara to list. The default is vertebrates.
 #'
 #' @return A character vector of species names.
 #' @export
@@ -248,16 +248,17 @@ ortholog_species <- function(release, division = "vertebrates") {
 
 #' Ortholog table for one species pair and Ensembl release
 #'
-#' Streamed from Ensembl Compara on first use, then cached, so later calls are
-#' offline. Compara is Ensembl's, so `release` is an Ensembl release even when
-#' the identifiers came from GENCODE.
+#' The function streams this table from Ensembl Compara on first use and then
+#' caches it. Later calls work offline. Compara belongs to Ensembl, so `release`
+#' is an Ensembl release even when the identifiers came from GENCODE.
 #'
 #' @param species Ensembl species the identifiers come from.
-#' @param to Species to find orthologs in, in any form [resolve_species()] accepts.
+#' @param to Species to find orthologs in, in any form that [resolve_species()]
+#'   accepts.
 #' @param release Ensembl release number.
-#' @param kind `"protein"` (the default) or `"ncrna"`: Compara publishes the two
-#'   trees separately, and non-coding orthologs live only in the second.
-#' @param refresh Re-download even when a cached copy exists.
+#' @param kind `"protein"` (the default) or `"ncrna"`. Compara publishes the two
+#'   trees separately. Non-coding orthologs are only in the second tree.
+#' @param refresh Download the table again, even when a cached copy exists.
 #'
 #' @return A data frame of `id`, `ortholog_id`, `homology_type`, `identity`,
 #'   `ortholog_identity`, `high_confidence`.
@@ -309,35 +310,37 @@ fetch_orthologs <- function(species, to, release, kind = c("protein", "ncrna"),
 
 #' Find orthologs of gene identifiers in another species
 #'
-#' Detects the species from identifiers and defaults to its newest indexed
-#' Ensembl release. Fetches that release's Compara orthologs against `to`
-#' (streamed once, then cached) and returns the orthologous identifiers with
-#' their gene names.
+#' This function detects the species from identifiers. The default release is
+#' the newest indexed Ensembl release of that species. The function fetches the
+#' Compara orthologs of that release against `to` (streamed once, then cached).
+#' It returns the orthologous identifiers with their gene names.
 #'
 #' A gene can have several orthologs or none. With `one2one = TRUE` (the
-#' default) only one-to-one orthologs are returned, so
-#' there is at most one row per input identifier and the result can be used
-#' directly as a lookup. Set it to `FALSE` to see one-to-many and many-to-many
-#' relationships as well.
+#' default), the function returns only one-to-one orthologs. There is a
+#' maximum of one row for each input identifier, and you can use the result
+#' directly as a lookup. Set it to `FALSE` to also see one-to-many and
+#' many-to-many relationships.
 #'
-#' @param ids Character vector of gene identifiers or gene names. A symbol can
-#'   label multiple genes, so all matches are included. Supply `species` for
-#'   input containing only names.
-#' @param to Species to find orthologs in, in any form [resolve_species()]
+#' @param ids Character vector of gene identifiers or gene names. A gene name
+#'   can label more than one gene, so the function includes all matches. Supply
+#'   `species` for input that contains only names.
+#' @param to Species to find orthologs in, in any form that [resolve_species()]
 #'   accepts: `"mus_musculus"`, `"Mouse"` or `"mouse"`.
-#' @param species,release Skip detection by naming them.
+#' @param species,release Give these values to skip detection.
 #' @param one2one Keep only one-to-one orthologs. See details.
-#' @param names Also look up gene names for both sides of the pair, which costs
-#'   a streamed mapping for each species. Both are named from the same Ensembl
-#'   release, so the two halves of a row describe one vintage.
-#' @param kind Passed to [fetch_orthologs()].
-#' @param quiet Suppress the message reporting what was detected.
+#' @param names Also look up gene names for the two sides of the pair. This
+#'   costs a streamed mapping for each species. The function names the two sides
+#'   from the same Ensembl release, so the two halves of a row describe one
+#'   release.
+#' @param kind The function passes this to [fetch_orthologs()].
+#' @param quiet Do not show the message that reports the detected values.
 #'
-#' @return A data frame with one row per ortholog relationship: `id` and `name`
-#'   for the query gene, `ortholog_id` and `ortholog_name` for its counterpart
-#'   in `to` (the two name columns when `names`), then `homology_type`,
-#'   `identity`, `ortholog_identity` and `high_confidence`. Identifiers with no
-#'   ortholog in `to` are absent, so the result is usually shorter than `ids`.
+#' @return A data frame with one row for each ortholog relationship. `id` and
+#'   `name` describe the query gene. `ortholog_id` and `ortholog_name` describe
+#'   its counterpart in `to`. The two name columns are present when `names` is
+#'   `TRUE`. The other columns are `homology_type`, `identity`,
+#'   `ortholog_identity` and `high_confidence`. Identifiers with no ortholog in
+#'   `to` are absent, so the result is usually shorter than `ids`.
 #'
 #' @seealso [geneid2name()] for names within one species.
 #' @export
@@ -351,7 +354,7 @@ orthologs <- function(ids, to, species = NULL, release = NULL, one2one = TRUE,
   ids <- .as_ids(ids)
   # classify each element so mixed inputs retain identifiers and names;
   # input containing only names requires an explicit species
-  is_id <- .looks_like_id(ids)
+  is_id <- .datable(ids)
   by_name <- !all(is_id)
   if (by_name && !any(is_id) && is.null(species)) {
     stop("gene names do not say which species they belong to; pass `species`.",

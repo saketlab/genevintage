@@ -29,40 +29,41 @@ RibosomalGenes(
 }
 \arguments{
 \item{ids}{Optional character vector of gene identifiers or gene names. When
-given, the species and release are detected from them and only these genes
-are considered. When omitted, \code{species} must be named and the whole
-mitochondrial gene set for its newest indexed release is returned.}
+you give \code{ids}, the function detects the species and release from them and
+examines only these genes. When you omit \code{ids}, you must name \code{species}.
+The function then returns the full mitochondrial gene set for the newest
+indexed release of that species.}
 
-\item{which}{Which ribosomal set to return. See details.}
+\item{which}{The ribosomal set to return. See details.}
 
-\item{species, release, assembly, source}{Skip detection by naming them.
-\code{species} accepts anything \code{\link[=resolve_species]{resolve_species()}} does.}
+\item{species, release, assembly, source}{Give these values to skip detection.
+\code{species} accepts every form that \code{\link[=resolve_species]{resolve_species()}} accepts.}
 
-\item{mapping}{Supply an annotation directly to bypass detection and
-downloading. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype},
-as \code{\link[=fetch_mapping]{fetch_mapping()}} returns; supports local GTFs and custom builds.}
+\item{mapping}{An annotation that you supply directly to bypass detection and
+download. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype}, as
+\code{\link[=fetch_mapping]{fetch_mapping()}} returns. It supports local GTFs and custom builds.}
 
-\item{quiet}{Suppress the message reporting what was detected.}
+\item{quiet}{Do not show the message that reports the detected values.}
 }
 \value{
-A data frame of \code{id}, \code{name}, \code{chr} and \code{biotype}, shaped as
-\code{\link[=mito_genes]{mito_genes()}} returns.
+A data frame of \code{id}, \code{name}, \code{chr} and \code{biotype}, with the same
+shape as the \code{\link[=mito_genes]{mito_genes()}} result.
 }
 \description{
 \code{which} selects the ribosomal set:
 }
 \details{
 \itemize{
-\item \code{"protein"} (the default): the genes encoding the ribosome's proteins,
-the set behind a single-cell ribosomal-content metric.
+\item \code{"protein"} (the default): the genes that encode the proteins of the
+ribosome. A single-cell ribosomal-content metric uses this set.
 \item \code{"rrna"}: the RNA components, by biotype (\code{rRNA} and \code{Mt_rRNA}).
-\item \code{"mito"}: the mitoribosome's proteins, named with an \code{M} prefix. These are
-nuclear genes; \code{\link[=mito_genes]{mito_genes()}} does not return them.
-\item \code{"all"}: every one of the above.
+\item \code{"mito"}: the proteins of the mitoribosome, with names that have an \code{M}
+prefix. These genes are nuclear. \code{\link[=mito_genes]{mito_genes()}} does not return them.
+\item \code{"all"}: all of the sets above.
 }
 
-The \code{"^RP[SL]"} symbol pattern is restricted to \code{protein_coding} genes to
-exclude pseudogenes and lncRNAs. A name rule also excludes S6 kinases
+The function limits the \code{"^RP[SL]"} symbol pattern to \code{protein_coding} genes,
+to exclude pseudogenes and lncRNAs. A name rule also excludes S6 kinases
 (\code{RPS6KA1} to \code{RPS6KL1}) and \code{RPS19BP1}.
 }
 \examples{

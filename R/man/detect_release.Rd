@@ -12,29 +12,32 @@ DetectRelease(ids, species = NULL)
 \arguments{
 \item{ids}{Character vector of gene or transcript identifiers.}
 
-\item{species}{Species name, e.g. \code{"homo_sapiens"}. Detected when \code{NULL}.
-
-A best match at the oldest or newest indexed release raises a warning: the
-index covers a finite span, and a set from outside it can only be scored
-against the nearest edge.}
+\item{species}{Species name, for example \code{"homo_sapiens"}. The function
+detects it when \code{NULL}.}
 }
 \value{
 A data frame of candidate releases, best first, with \code{release},
-\code{source} (\code{ensembl}, \code{gencode} for GENCODE's primary-assembly gene set, or
-\code{gencode_all} for its scaffold- and patch-inclusive one), \code{assembly},
-\code{feasible}, \code{dist} and \code{n_index}. Each assembly has its own row within a
-release. All candidates are returned because adjacent releases can have
-indistinguishable fingerprints.
+\code{source}, \code{assembly}, \code{feasible}, \code{dist} and \code{n_index}. \code{source} is
+\code{ensembl}, \code{gencode} for the primary-assembly gene set of GENCODE, or
+\code{gencode_all} for its gene set with scaffolds and patches. Each assembly
+has its own row in a release. The function returns all candidates because
+adjacent releases can have indistinguishable fingerprints.
 }
 \description{
-Scores every release the index knows for this species, marks infeasible
-those that could not have produced the input, and ranks the rest by fit. See
-\code{vignette("how-it-works")} for the scoring.
+This function scores each release that the index knows for this species. It
+marks a release as infeasible if that release cannot produce the input. It
+ranks the remaining releases by fit. For the score method, refer to
+\code{vignette("how-it-works")}.
 }
 \details{
-Transcript identifiers (\code{ENSMUST...}, \code{FBtr...}) are scored against a
-separate transcript index, which covers the commonly quantified species and
-GENCODE; for another species pass \code{release} to \code{\link[=transcript2gene]{transcript2gene()}}.
+The function scores transcript identifiers (\code{ENSMUST...}, \code{FBtr...}) against
+a separate transcript index. This index covers GENCODE and the commonly
+quantified species. For another species, pass \code{release} to
+\code{\link[=transcript2gene]{transcript2gene()}}.
+
+A best match at the oldest or newest indexed release gives a warning. The
+index covers a finite span. The function can score a set from outside that
+span only against the nearest edge.
 }
 \examples{
 ids <- readLines(system.file("extdata", "example_ids.txt.gz",

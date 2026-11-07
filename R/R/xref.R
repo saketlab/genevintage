@@ -3,14 +3,14 @@
 # match the database suffix because filenames use the division's release number
 .XREF_FILE <- "\\.%s\\.tsv\\.gz$"
 
-#' Stream one cross-reference TSV, keeping the gene-level pairs
+#' Stream one cross-reference TSV and keep the gene-level pairs
 #'
-#' Deduplicate gene-level pairs from transcript rows while streaming to limit
-#' memory to distinct pairs.
+#' This function removes duplicates of gene-level pairs from transcript rows
+#' during the stream. This limits memory to distinct pairs.
 #'
 #' @param url A `.tsv.gz` cross-reference URL.
-#' @param db The `db_name` to keep, e.g. `"EntrezGene"`.
-#' @param chunk Lines to decompress per iteration.
+#' @param db The `db_name` to keep, for example `"EntrezGene"`.
+#' @param chunk Lines to decompress in each iteration.
 #' @return A data frame of `id` and `xref`.
 #' @export
 #' @examplesIf interactive()
@@ -52,15 +52,16 @@ stream_xrefs <- function(url, db = "EntrezGene", chunk = 200000) {
 
 #' Ensembl gene identifiers and their cross-references, cached
 #'
-#' Streams the cross-reference TSV Ensembl publishes for a species and release,
-#' keeps the gene-level pairs and caches them, so later calls are offline.
+#' This function streams the cross-reference TSV that Ensembl publishes for a
+#' species and release. It keeps the gene-level pairs and caches them. Later
+#' calls work offline.
 #'
-#' @param species Species in any form [resolve_species()] accepts.
+#' @param species Species in any form that [resolve_species()] accepts.
 #' @param release Ensembl release number for the cross-reference files.
-#' @param db Cross-reference database. `"entrez"` is the only one indexed.
-#' @param refresh Refetch and overwrite the cached copy.
-#' @return A data frame of `id` and `xref`, one row per distinct pair.
-#' @seealso [entrez_ids()] for the lookup this feeds.
+#' @param db Cross-reference database. `"entrez"` is the only indexed database.
+#' @param refresh Fetch the table again and overwrite the cached copy.
+#' @return A data frame of `id` and `xref`, one row for each distinct pair.
+#' @seealso [entrez_ids()] for the lookup that uses this table.
 #' @export
 #' @examplesIf interactive()
 #' head(fetch_xrefs("yeast", release = 116))
@@ -104,21 +105,23 @@ fetch_xrefs <- function(species, release, db = "entrez", refresh = FALSE) {
 
 #' NCBI Entrez identifiers for a set of genes
 #'
-#' Takes gene identifiers or gene names and returns their Entrez identifiers,
-#' detecting the species the way the rest of the package does. Cross-references
-#' are streamed once per species and release, then cached.
+#' This function takes gene identifiers or gene names and returns their Entrez
+#' identifiers. It detects the species in the same way as the rest of the
+#' package. It streams cross-references once for each species and release and
+#' then caches them.
 #'
-#' A gene may carry several Entrez identifiers or none. Each row is a pair;
+#' A gene can have several Entrez identifiers or none. Each row is a pair.
 #' `entrez` is `NA` where Ensembl records no cross-reference.
 #'
-#' Cross-references are published against Ensembl releases. Identifiers dated to
-#' a GENCODE release are looked up in the newest indexed Ensembl release for
-#' that species to obtain cross-references between stable identifiers.
+#' Ensembl publishes cross-references against Ensembl releases. If identifiers
+#' belong to a GENCODE release, the function looks them up in the newest indexed
+#' Ensembl release for that species.
 #'
 #' @inheritParams mito_genes
-#' @param ids Gene identifiers, or gene names. Names need `species`, since a
-#'   name does not say which species it came from.
-#' @return A data frame of `input`, `id`, `name` and `entrez`, one row per pair.
+#' @param ids Gene identifiers, or gene names. For names, you must give
+#'   `species`, because a name does not tell which species it came from.
+#' @return A data frame of `input`, `id`, `name` and `entrez`, one row for each
+#'   pair.
 #' @seealso [fetch_xrefs()], [gene_names()].
 #' @export
 #' @examplesIf interactive()

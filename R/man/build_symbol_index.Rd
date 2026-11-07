@@ -10,9 +10,8 @@ build_symbol_index(mappings, min_release = NULL)
 BuildSymbolIndex(mappings, min_release = NULL)
 }
 \arguments{
-\item{mappings}{A named list of mapping data frames returned by
-\code{\link[=fetch_mapping]{fetch_mapping()}}, or one such data frame with \code{species} and \code{release}
-columns.}
+\item{mappings}{A named list of mapping data frames that \code{\link[=fetch_mapping]{fetch_mapping()}}
+returns, or one such data frame with \code{species} and \code{release} columns.}
 
 \item{min_release}{Optional minimum release number.}
 }

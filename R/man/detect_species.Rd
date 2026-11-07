@@ -13,14 +13,14 @@ DetectSpecies(ids)
 \item{ids}{Character vector of gene or transcript identifiers.}
 }
 \value{
-A data frame of candidate species ordered by the share of \code{ids} they
-explain, with columns \code{species}, \code{common}, \code{division}, \code{prefix}, \code{scheme}
-and \code{frac}.
-Rows can tie at the same \code{frac}: dog breeds and mouse strains share an
-identifier space. Check for ties when that distinction matters.
+A data frame of candidate species with columns \code{species}, \code{common},
+\code{division}, \code{prefix}, \code{scheme} and \code{frac}. The rows are in order of the
+share of \code{ids} that each species explains. Rows can have the same \code{frac},
+because dog breeds and mouse strains share an identifier space. Examine the
+ties when that distinction is important.
 }
 \description{
-Matches identifier prefixes to indexed species.
+This function matches identifier prefixes to indexed species.
 }
 \examples{
 detect_species(c("ENSMUSG00000051951", "ENSMUSG00000089699"))

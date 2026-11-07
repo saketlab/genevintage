@@ -3,23 +3,24 @@
 \name{qmax_violations}
 \alias{qmax_violations}
 \alias{QmaxViolations}
-\title{Where the index violates its own ordering invariant}
+\title{Find violations of the order invariant in the index}
 \usage{
 qmax_violations(fp = .fp())
 
 QmaxViolations(fp = .fp())
 }
 \arguments{
-\item{fp}{A fingerprint index. Defaults to the shipped one.}
+\item{fp}{A fingerprint index. The default is the shipped index.}
 }
 \value{
-A character vector of violation messages, empty when the index is sound.
+A character vector of violation messages, empty when the index has no
+violations.
 }
 \description{
-Identifier numbers are assigned upward, so \code{qmax} should not fall as releases
-advance within one species and assembly. Ensembl retires genes at the top of
-the range occasionally, so only a fall of more than 1\% is reported.
-Only numerically ordered schemes are checked.
+New identifiers get higher numbers, so \code{qmax} usually does not fall as
+releases advance in one species and assembly. Ensembl occasionally retires genes at
+the top of the range, so the function reports only a fall of more than 1\%.
+It examines only numerically ordered schemes.
 }
 \examples{
 # report ordering violations in the shipped index

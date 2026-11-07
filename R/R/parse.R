@@ -31,21 +31,17 @@ SCHEMES <- c(
   stop("`ids` must be a character vector.", call. = FALSE)
 }
 
-#' Whether each element looks like a gene identifier of any known scheme
-#'
-#' Classify each element so callers can handle mixed identifiers and names.
-#' @noRd
-.looks_like_id <- function(x) grepl(.ANY_SCHEME, .bare(x), perl = TRUE)
+# digits, LOC and RefSeq look like ids but date no indexed species
+.datable <- function(x) {
+  rx <- SCHEMES[names(SCHEMES) %in% .known_species()$scheme]
+  grepl(paste(rx, collapse = "|"), .bare(x), perl = TRUE)
+}
 
-# combine schemes into one anchored alternation for a single matching pass
-.ANY_SCHEME <- paste0("^(?:", paste(sub("\\$$", "", sub("^\\^", "", SCHEMES)),
-  collapse = "|"
-), ")$")
 
 #' The numeric part of an identifier
 #'
-#' Use the same numeric extraction for index construction and input scoring
-#' so `qmax` compares matching definitions.
+#' The index builder and the input scorer use this extraction, so `qmax` has one
+#' definition on the two sides.
 #' @noRd
 .id_number <- function(x, bare = .bare(x)) {
   out <- rep(NA_real_, length(bare))
@@ -67,11 +63,11 @@ SCHEMES <- c(
   v
 }
 
-#' Whether a scheme's identifiers are assigned in increasing numeric order
+#' Whether the identifiers of a scheme increase in numeric order
 #'
 #' Require numeric extraction to succeed for more than 90% of identifiers.
 #' TAIR (`AT1G01010`) and SGD (`YDR387C`) embed chromosome information, which
-#' prevents `.id_number()` from extracting a value for `qmax`.
+#' prevents `.id_number()` from getting a value for `qmax`.
 #' @noRd
 .numeric_ordered <- function(ids) mean(!is.na(.id_number(ids))) > 0.9
 
@@ -89,8 +85,8 @@ SCHEMES <- c(
 
 #' First non-missing of two vectors, element by element
 #'
-#' Replace missing entries of `x` with corresponding entries of `y`, preserving
-#' the type of empty `x`.
+#' Replace missing entries of `x` with the same entries of `y`. An empty `x`
+#' keeps its type.
 #' @noRd
 .coalesce <- function(x, y) {
   na <- is.na(x)
@@ -106,17 +102,18 @@ SCHEMES <- c(
 #' @noRd
 .bare <- function(x) sub("\\.\\d+(_[A-Z0-9_]+)?$", "", .normalize_id(x), perl = TRUE)
 
-#' Identifier without its version, keeping a tag such as GENCODE's _PAR_Y
+#' Identifier without its version. A tag such as GENCODE's _PAR_Y stays.
 #' @noRd
 .unversioned <- function(x) sub("\\.\\d+(_[A-Z0-9_]+)?$", "\\1", .normalize_id(x), perl = TRUE)
 
 TRANSCRIPT_RX <- sprintf("^ENS[A-Z]{0,4}?T\\d{11}$|%s", SCHEMES[["flybase_tx"]])
 
-#' Which identifier scheme a vector of IDs uses
+#' Identifier scheme of identifiers
 #'
 #' @param ids Character vector of identifiers.
-#' @param min_purity Smallest matching fraction to accept a scheme.
-#' @return A list with `scheme`, `purity` and the per-scheme fractions.
+#' @param min_purity Smallest match fraction that the function accepts for a
+#'   scheme.
+#' @return A list with `scheme`, `purity` and the fraction for each scheme.
 #' @examples
 #' guess_scheme(c("ENSG00000141510", "ENSG00000012048"))$scheme
 #' guess_scheme(c("TP53", "BRCA1"))$scheme
@@ -144,11 +141,11 @@ guess_scheme <- function(ids, min_purity = 0.5) {
 
 #' Parse Ensembl identifiers into their parts
 #'
-#' Handles unversioned and versioned IDs in one vector, `_PAR_Y`-style tags,
-#' and non-Ensembl input (returned as `NA` rows).
+#' This function accepts unversioned and versioned identifiers in one vector,
+#' `_PAR_Y`-style tags, and non-Ensembl input (returned as `NA` rows).
 #'
 #' @param x Character vector of identifiers.
-#' @return A data frame with one row per input: `id`, `prefix`, `feature`,
+#' @return A data frame with one row for each input: `id`, `prefix`, `feature`,
 #'   `num`, `id_version`, `tag`.
 #' @examples
 #' parse_ens(c(

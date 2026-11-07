@@ -26,33 +26,35 @@ EntrezIDs(
 )
 }
 \arguments{
-\item{ids}{Gene identifiers, or gene names. Names need \code{species}, since a
-name does not say which species it came from.}
+\item{ids}{Gene identifiers, or gene names. For names, you must give
+\code{species}, because a name does not tell which species it came from.}
 
-\item{species, release, assembly, source}{Skip detection by naming them.
-\code{species} accepts anything \code{\link[=resolve_species]{resolve_species()}} does.}
+\item{species, release, assembly, source}{Give these values to skip detection.
+\code{species} accepts every form that \code{\link[=resolve_species]{resolve_species()}} accepts.}
 
-\item{mapping}{Supply an annotation directly to bypass detection and
-downloading. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype},
-as \code{\link[=fetch_mapping]{fetch_mapping()}} returns; supports local GTFs and custom builds.}
+\item{mapping}{An annotation that you supply directly to bypass detection and
+download. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype}, as
+\code{\link[=fetch_mapping]{fetch_mapping()}} returns. It supports local GTFs and custom builds.}
 
-\item{quiet}{Suppress the message reporting what was detected.}
+\item{quiet}{Do not show the message that reports the detected values.}
 }
 \value{
-A data frame of \code{input}, \code{id}, \code{name} and \code{entrez}, one row per pair.
+A data frame of \code{input}, \code{id}, \code{name} and \code{entrez}, one row for each
+pair.
 }
 \description{
-Takes gene identifiers or gene names and returns their Entrez identifiers,
-detecting the species the way the rest of the package does. Cross-references
-are streamed once per species and release, then cached.
+This function takes gene identifiers or gene names and returns their Entrez
+identifiers. It detects the species in the same way as the rest of the
+package. It streams cross-references once for each species and release and
+then caches them.
 }
 \details{
-A gene may carry several Entrez identifiers or none. Each row is a pair;
+A gene can have several Entrez identifiers or none. Each row is a pair.
 \code{entrez} is \code{NA} where Ensembl records no cross-reference.
 
-Cross-references are published against Ensembl releases. Identifiers dated to
-a GENCODE release are looked up in the newest indexed Ensembl release for
-that species to obtain cross-references between stable identifiers.
+Ensembl publishes cross-references against Ensembl releases. If identifiers
+belong to a GENCODE release, the function looks them up in the newest indexed
+Ensembl release for that species.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

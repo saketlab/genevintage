@@ -13,12 +13,12 @@ ParseEns(x)
 \item{x}{Character vector of identifiers.}
 }
 \value{
-A data frame with one row per input: \code{id}, \code{prefix}, \code{feature},
+A data frame with one row for each input: \code{id}, \code{prefix}, \code{feature},
 \code{num}, \code{id_version}, \code{tag}.
 }
 \description{
-Handles unversioned and versioned IDs in one vector, \verb{_PAR_Y}-style tags,
-and non-Ensembl input (returned as \code{NA} rows).
+This function accepts unversioned and versioned identifiers in one vector,
+\verb{_PAR_Y}-style tags, and non-Ensembl input (returned as \code{NA} rows).
 }
 \examples{
 parse_ens(c(

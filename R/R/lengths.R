@@ -4,7 +4,7 @@
 
 #' Total length of the union of each gene's exons
 #'
-#' Overlapping exons count once; GTF coordinates are 1-based and closed.
+#' Exons that overlap count once. GTF coordinates are 1-based and closed.
 #'
 #' @param gene,start,end Parallel vectors, one element per exon.
 #' @return A named integer vector of lengths, one per gene, in first-seen order.
@@ -27,13 +27,14 @@
   stats::setNames(as.integer(out[ids]), ids)
 }
 
-#' Exon-union lengths from a GTF, streamed without writing it to disk
+#' Stream exon-union lengths from a GTF and write nothing to disk
 #'
-#' Keeps only `exon` lines. Gene ids are read from the `gene_id` attribute, so a
-#' GENCODE GTF yields versioned ids, as its `gene` lines do in [stream_gtf()].
+#' This function keeps only `exon` lines. It reads gene identifiers from the
+#' `gene_id` attribute, so a GENCODE GTF gives versioned identifiers, as its
+#' `gene` lines do in [stream_gtf()].
 #'
 #' @param url A `.gtf.gz` URL.
-#' @param chunk Lines to decompress per iteration.
+#' @param chunk Lines to decompress in each iteration.
 #' @return A data frame of `id` and `length` (bases).
 #' @examplesIf interactive()
 #' stream_exon_lengths(paste0(
@@ -68,13 +69,14 @@ stream_exon_lengths <- function(url, chunk = 100000) {
 #' Exon-union gene lengths for one species and release
 #'
 #' @inheritParams fetch_mapping
-#' @param ids Optional gene identifiers or names to return lengths for, in
-#'   order. Versioned identifiers match their unversioned record. Names are
-#'   matched through [fetch_mapping()]; a name shared by several genes gets `NA`.
+#' @param ids Optional gene identifiers or gene names to return lengths for, in
+#'   order. Versioned identifiers match their unversioned record. The function
+#'   matches names through [fetch_mapping()]. A name that several genes share
+#'   gets `NA`.
 #'
-#' @return Without `ids`, a data frame of `id` and `length` for every gene in the
-#'   annotation. With `ids`, a named integer vector the length of `ids`, `NA`
-#'   where nothing matched.
+#' @return Without `ids`, a data frame of `id` and `length` for each gene in the
+#'   annotation. With `ids`, a named integer vector with the length of `ids`,
+#'   and `NA` where there is no match.
 #' @seealso [fetch_mapping()] for genomic span, [stream_exon_lengths()].
 #' @examplesIf interactive()
 #' gene_lengths("human", release = 116, ids = c("ENSG00000141510", "TP53"))

@@ -27,31 +27,32 @@ lncRNAGenes(
 }
 \arguments{
 \item{ids}{Optional character vector of gene identifiers or gene names. When
-given, the species and release are detected from them and only these genes
-are considered. When omitted, \code{species} must be named and the whole
-mitochondrial gene set for its newest indexed release is returned.}
+you give \code{ids}, the function detects the species and release from them and
+examines only these genes. When you omit \code{ids}, you must name \code{species}.
+The function then returns the full mitochondrial gene set for the newest
+indexed release of that species.}
 
-\item{species, release, assembly, source}{Skip detection by naming them.
-\code{species} accepts anything \code{\link[=resolve_species]{resolve_species()}} does.}
+\item{species, release, assembly, source}{Give these values to skip detection.
+\code{species} accepts every form that \code{\link[=resolve_species]{resolve_species()}} accepts.}
 
-\item{mapping}{Supply an annotation directly to bypass detection and
-downloading. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype},
-as \code{\link[=fetch_mapping]{fetch_mapping()}} returns; supports local GTFs and custom builds.}
+\item{mapping}{An annotation that you supply directly to bypass detection and
+download. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype}, as
+\code{\link[=fetch_mapping]{fetch_mapping()}} returns. It supports local GTFs and custom builds.}
 
-\item{quiet}{Suppress the message reporting what was detected.}
+\item{quiet}{Do not show the message that reports the detected values.}
 }
 \value{
-A data frame of \code{id}, \code{name}, \code{chr} and \code{biotype}, shaped as
-\code{\link[=mito_genes]{mito_genes()}} returns.
+A data frame of \code{id}, \code{name}, \code{chr} and \code{biotype}, with the same
+shape as the \code{\link[=mito_genes]{mito_genes()}} result.
 }
 \description{
-Matches lncRNA biotype spellings across species and releases, including
-\code{lncRNA}, \code{lincRNA}, \code{antisense}, \code{processed_transcript} and
-\verb{3prime_overlapping_ncrna}.
+This function matches the lncRNA biotype spellings across species and
+releases. These spellings include \code{lncRNA}, \code{lincRNA}, \code{antisense},
+\code{processed_transcript} and \verb{3prime_overlapping_ncrna}.
 }
 \details{
-Generic \code{ncRNA} entries are excluded. If the annotation contains them and
-the subset has no lncRNA matches, a message points to
+The function excludes generic \code{ncRNA} entries. If the annotation contains
+them and the subset has no lncRNA match, a message points to
 \code{genes_by_biotype("ncRNA")}.
 }
 \examples{

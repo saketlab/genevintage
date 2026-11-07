@@ -24,23 +24,24 @@ FetchOrthologs(
 \arguments{
 \item{species}{Ensembl species the identifiers come from.}
 
-\item{to}{Species to find orthologs in, in any form \code{\link[=resolve_species]{resolve_species()}} accepts.}
+\item{to}{Species to find orthologs in, in any form that \code{\link[=resolve_species]{resolve_species()}}
+accepts.}
 
 \item{release}{Ensembl release number.}
 
-\item{kind}{\code{"protein"} (the default) or \code{"ncrna"}: Compara publishes the two
-trees separately, and non-coding orthologs live only in the second.}
+\item{kind}{\code{"protein"} (the default) or \code{"ncrna"}. Compara publishes the two
+trees separately. Non-coding orthologs are only in the second tree.}
 
-\item{refresh}{Re-download even when a cached copy exists.}
+\item{refresh}{Download the table again, even when a cached copy exists.}
 }
 \value{
 A data frame of \code{id}, \code{ortholog_id}, \code{homology_type}, \code{identity},
 \code{ortholog_identity}, \code{high_confidence}.
 }
 \description{
-Streamed from Ensembl Compara on first use, then cached, so later calls are
-offline. Compara is Ensembl's, so \code{release} is an Ensembl release even when
-the identifiers came from GENCODE.
+The function streams this table from Ensembl Compara on first use and then
+caches it. Later calls work offline. Compara belongs to Ensembl, so \code{release}
+is an Ensembl release even when the identifiers came from GENCODE.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

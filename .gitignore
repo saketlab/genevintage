@@ -31,7 +31,8 @@ R/tests/testthat/Rplots.pdf
 
 
 
-R/data-raw/
+R/data-raw/*
+!R/data-raw/logo.R
 R/inst/extdata/symbol-index-parts/
 R/tests/testthat/fixtures/
 R/tests/testthat/transcripts/
@@ -47,3 +48,4 @@ R/vignettes/genevintage.Rmd
 R/vignettes/matrix-rows.Rmd
 R/inst/extdata/gene-rows/
 R/cran/check.log
+R/tests/testthat/_problems/

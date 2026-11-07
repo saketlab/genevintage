@@ -24,27 +24,31 @@ CompareReleases(
 )
 }
 \arguments{
-\item{species}{Species in any form \code{\link[=resolve_species]{resolve_species()}} accepts.}
+\item{species}{Species in any form that \code{\link[=resolve_species]{resolve_species()}} accepts.}
 
-\item{from, to}{The two releases, in either order.}
+\item{from, to}{The two releases. If \code{to} is the older release, \code{"added"} and
+\code{"removed"} change places.}
 
-\item{assembly, source}{Passed to \code{\link[=fetch_mapping]{fetch_mapping()}}. Both releases are read
-from the same assembly and annotation family to isolate release changes.}
+\item{assembly, source}{The function passes these to \code{\link[=fetch_mapping]{fetch_mapping()}}. It
+reads the two releases from the same assembly and annotation family, to
+isolate the release changes.}
 
-\item{quiet}{Suppress the summary message.}
+\item{quiet}{Do not show the summary message.}
 }
 \value{
 A data frame of \code{id}, \code{change} (\code{"added"}, \code{"removed"}, \code{"renamed"}
 or \code{"retyped"}), \code{name_from}, \code{name_to}, \code{biotype_from} and \code{biotype_to}.
 }
 \description{
-Joins two vintages on the stable identifier and reports what differs: genes
-the newer release added, genes it dropped, and genes whose symbol or biotype
-changed. Rows that are identical in both are not returned.
+This function joins two releases on the stable identifier and reports the
+differences. It reports genes that are only in \code{to} (\code{"added"}), genes that
+are only in \code{from} (\code{"removed"}), and genes with a changed name or biotype. It
+does not return rows that are identical in the two releases.
 }
 \details{
-Added and removed genes are identified by stable identifier presence.
-Finding a successor to a retired identifier requires a separate lookup.
+The function finds added and removed genes from the presence of the stable
+identifier. To find the successor of a retired identifier, you must do a
+separate lookup.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
@@ -54,5 +58,5 @@ d[d$change == "renamed", ]
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=detect_release]{detect_release()}} to find out which vintages you have.
+\code{\link[=detect_release]{detect_release()}} to find which releases you have.
 }

@@ -36,7 +36,7 @@ QMAX_TOLERANCE <- 0.999
 
 #' The shipped transcript fingerprint index
 #'
-#' Same columns as .fp(); fewer species, see data-raw/build_tx_fp.R.
+#' Same columns as .fp(), with fewer species. Refer to data-raw/build_tx_fp.R.
 #' @noRd
 .tx_fp <- .once(function() {
   f <- .extdata("tx_fingerprints.rds")
@@ -66,15 +66,16 @@ QMAX_TOLERANCE <- 0.999
   r[which.max(.rel_num(r))]
 }
 
-#' Where the index violates its own ordering invariant
+#' Find violations of the order invariant in the index
 #'
-#' Identifier numbers are assigned upward, so `qmax` should not fall as releases
-#' advance within one species and assembly. Ensembl retires genes at the top of
-#' the range occasionally, so only a fall of more than 1% is reported.
-#' Only numerically ordered schemes are checked.
+#' New identifiers get higher numbers, so `qmax` usually does not fall as
+#' releases advance in one species and assembly. Ensembl occasionally retires genes at
+#' the top of the range, so the function reports only a fall of more than 1%.
+#' It examines only numerically ordered schemes.
 #'
-#' @param fp A fingerprint index. Defaults to the shipped one.
-#' @return A character vector of violation messages, empty when the index is sound.
+#' @param fp A fingerprint index. The default is the shipped index.
+#' @return A character vector of violation messages, empty when the index has no
+#'   violations.
 #' @examples
 #' # report ordering violations in the shipped index
 #' qmax_violations()
@@ -137,14 +138,14 @@ qmax_violations <- function(fp = .fp()) {
 
 #' Which species a set of identifiers belongs to
 #'
-#' Matches identifier prefixes to indexed species.
+#' This function matches identifier prefixes to indexed species.
 #'
 #' @param ids Character vector of gene or transcript identifiers.
-#' @return A data frame of candidate species ordered by the share of `ids` they
-#'   explain, with columns `species`, `common`, `division`, `prefix`, `scheme`
-#'   and `frac`.
-#'   Rows can tie at the same `frac`: dog breeds and mouse strains share an
-#'   identifier space. Check for ties when that distinction matters.
+#' @return A data frame of candidate species with columns `species`, `common`,
+#'   `division`, `prefix`, `scheme` and `frac`. The rows are in order of the
+#'   share of `ids` that each species explains. Rows can have the same `frac`,
+#'   because dog breeds and mouse strains share an identifier space. Examine the
+#'   ties when that distinction is important.
 #' @examples
 #' detect_species(c("ENSMUSG00000051951", "ENSMUSG00000089699"))
 #'
@@ -217,27 +218,29 @@ detect_species <- function(ids) {
 
 #' Which Ensembl release a set of identifiers came from
 #'
-#' Scores every release the index knows for this species, marks infeasible
-#' those that could not have produced the input, and ranks the rest by fit. See
-#' `vignette("how-it-works")` for the scoring.
+#' This function scores each release that the index knows for this species. It
+#' marks a release as infeasible if that release cannot produce the input. It
+#' ranks the remaining releases by fit. For the score method, refer to
+#' `vignette("how-it-works")`.
 #'
-#' Transcript identifiers (`ENSMUST...`, `FBtr...`) are scored against a
-#' separate transcript index, which covers the commonly quantified species and
-#' GENCODE; for another species pass `release` to [transcript2gene()].
+#' The function scores transcript identifiers (`ENSMUST...`, `FBtr...`) against
+#' a separate transcript index. This index covers GENCODE and the commonly
+#' quantified species. For another species, pass `release` to
+#' [transcript2gene()].
+#'
+#' A best match at the oldest or newest indexed release gives a warning. The
+#' index covers a finite span. The function can score a set from outside that
+#' span only against the nearest edge.
 #'
 #' @param ids Character vector of gene or transcript identifiers.
-#' @param species Species name, e.g. `"homo_sapiens"`. Detected when `NULL`.
-#'
-#' A best match at the oldest or newest indexed release raises a warning: the
-#' index covers a finite span, and a set from outside it can only be scored
-#' against the nearest edge.
-#'
+#' @param species Species name, for example `"homo_sapiens"`. The function
+#'   detects it when `NULL`.
 #' @return A data frame of candidate releases, best first, with `release`,
-#'   `source` (`ensembl`, `gencode` for GENCODE's primary-assembly gene set, or
-#'   `gencode_all` for its scaffold- and patch-inclusive one), `assembly`,
-#'   `feasible`, `dist` and `n_index`. Each assembly has its own row within a
-#'   release. All candidates are returned because adjacent releases can have
-#'   indistinguishable fingerprints.
+#'   `source`, `assembly`, `feasible`, `dist` and `n_index`. `source` is
+#'   `ensembl`, `gencode` for the primary-assembly gene set of GENCODE, or
+#'   `gencode_all` for its gene set with scaffolds and patches. Each assembly
+#'   has its own row in a release. The function returns all candidates because
+#'   adjacent releases can have indistinguishable fingerprints.
 #' @examples
 #' ids <- readLines(system.file("extdata", "example_ids.txt.gz",
 #'   package = "genevintage"

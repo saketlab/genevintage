@@ -3,7 +3,7 @@
 \name{stream_gtf}
 \alias{stream_gtf}
 \alias{StreamGTF}
-\title{Pull gene records out of a GTF without ever writing it to disk}
+\title{Stream gene records from a GTF}
 \usage{
 stream_gtf(url, chunk = 1e+05)
 
@@ -12,16 +12,17 @@ StreamGTF(url, chunk = 1e+05)
 \arguments{
 \item{url}{A \code{.gtf.gz} URL.}
 
-\item{chunk}{Lines to decompress per iteration.}
+\item{chunk}{Lines to decompress in each iteration.}
 }
 \value{
 A data frame of \code{id}, \code{name}, \code{chr}, \code{start}, \code{end}, \code{strand},
-\code{span}, \code{id_version} and \code{biotype}. \code{span} is the genomic extent from
-first to last base; TPM and FPKM require exonic length.
+\code{span}, \code{id_version} and \code{biotype}. \code{span} is the genomic extent from the
+first base to the last base. TPM and FPKM must use exonic length.
 }
 \description{
-Decompresses the stream in chunks and retains \code{gene} lines. If there are
-none, reads the first record per gene from the remaining feature lines.
+This function decompresses the stream in chunks and keeps the \code{gene} lines.
+If there are no \code{gene} lines, it reads the first record for each gene from
+the remaining feature lines.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

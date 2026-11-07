@@ -12,14 +12,15 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height
 library(genevintage)
 ```
 
-`genevintage` answers two questions about a set of gene identifiers: which
-species, and which release. Both are answered from the identifiers alone, using
-the bundled fingerprint index.
+`genevintage` finds the species and the release of a set of gene identifiers
+(IDs). This is done by using only the input IDs and the index in the package.
+The index has one row for each known release, with data such as the gene count and
+the highest ID number.
 
-## Detecting species
+## Find the species
 
-`detect_species()` first works out what fraction of the input each candidate
-species' identifier prefix explains:
+We start with a small input. `detect_species()` first calculates the fraction of the input that matches the
+ID prefix of each species:
 
 ```{r frac}
 ids <- c(
@@ -30,45 +31,46 @@ cand <- detect_species(ids)
 head(cand[, c("species", "prefix", "frac")])
 ```
 
-Three of the four inputs (one a repeat) carry the `ENSMUSG` prefix, so every
-mouse strain that shares it ties at `frac = 0.75`. Ties are broken in order by:
+Three of the four inputs have the `ENSMUSG` prefix. All mouse strains share
+this prefix, so all have `frac = 0.75`. These rules select between species with
+the same `frac`, in this order:
 
-1. **Prefix length.** A longer matching prefix ranks higher.
-2. **`reach`.** Could the species have issued the input's highest identifier
-   number? The largest number in the input is compared with the largest `qmax`
-   (the highest identifier number in a gene set) ever indexed for the species,
-   within `QMAX_TOLERANCE`.
-3. **`fit`.** How close is the input's gene count to a real gene set? It is the
-   smallest log-scale gap between the number of unique IDs and any indexed
-   release's gene count. It is only informative for a full gene set.
+1. Prefix length. A longer prefix gets a higher rank.
+2. `reach`. This rule asks if the species can have the highest ID number in
+   the input. The package compares this number with the largest `qmax` of the
+   species. `qmax` is the highest ID number in a gene set. `QMAX_TOLERANCE`
+   sets the permitted difference.
+3. `fit`. This rule compares the number of unique IDs with the gene count
+   of each release. The smallest difference on a log scale is the `fit`. This
+   rule is useful only for a full gene set.
 
-Any remaining tie is broken by species name, for a stable order; such species are
-indistinguishable from the identifiers alone. `reach` and `fit` are used for
-ranking only and are not returned.
+If a tie remains, the species name sets the order. The IDs alone cannot show
+the difference between these species. The result does not contain `reach` and
+`fit`.
 
-## Determining the annotation release
+## Find the release
 
-`detect_release()` compares the input against the fingerprint index and rules
-out releases that could not have produced it, using two facts:
+`detect_release()` compares the input with the index. First, it removes each
+release that cannot have the input. It uses two facts:
 
-1. Identifier numbers (usually) only go up, so the highest number in the input is a
-   floor, i.e. no earlier release would have it
-2. A gene's version only goes up too, so the highest version in the input is
-   also a floor.
+1. ID numbers usually increase. A release older than the highest ID number in
+   the input cannot contain that ID.
+2. Gene versions also increase. A release older than the highest version in
+   the input cannot contain that version.
 
-`QMAX_TOLERANCE` lets a release's `qmax` fall slightly short of the
-input's highest number. Ensembl sometimes retires its top-numbered genes, which
-lowers `qmax` without changing the assembly. `qmax_violations()` lists every
-case in the shipped index:
+Ensembl sometimes removes the genes with the highest numbers. This decreases
+`qmax`, so `QMAX_TOLERANCE` lets the `qmax` of a release be slightly less
+than the highest number in the input. `qmax_violations()` shows each such case
+in the index:
 
 ```{r violations}
 qmax_violations()
 ```
 
-Where a violation exists, `detect_release()` skips the floor for that
-species, since the check would fail against the species' own history.
+If a species has a violation, `detect_release()` does not use the first fact
+for that species.
 
-Among the releases left feasible, distance ranks the rest:
+We now use a larger input. `dist` ranks the remaining releases:
 
 ```{r dist}
 ids2 <- readLines(system.file("extdata", "example_ids.txt.gz",
@@ -77,34 +79,244 @@ ids2 <- readLines(system.file("extdata", "example_ids.txt.gz",
 head(detect_release(ids2), 3)
 ```
 
-`dist` is the absolute difference in `log1p(gene count)` between the input
-and each candidate release, so a thousand genes matter less in human (tens of
-thousands of genes) than in a species with a few hundred. For species whose
-identifier numbers are ordered, it adds the same comparison on the 90th
-percentile of identifier numbers, which separates releases that share a gene
-count but use different numbers.
+`dist` is the absolute difference in `log1p(gene count)` between the input and
+the release. Because of the log, one thousand genes have less effect in human
+than in a species with a few hundred genes.
 
-Most non-Ensembl schemes carry no order in their identifier numbers. Such
-schemes skip the numeric floor and the quantile term entirely:
+If the ID numbers of a species have an order, `dist` also compares the 90th
+percentile of the ID numbers. This separates releases with the same gene count
+but different ID numbers.
+
+The ID numbers of most schemes that are not Ensembl have no order. For these
+schemes, the package does not use the ID number limit or the percentile:
 
 ```{r unordered}
 head(detect_release(c("YAL001C", "YAL002W", "YAL003W"), species = "yeast"), 5)
 ```
 
-## Handling GENCODE and Ensembl
+## GENCODE and Ensembl
 
-Human and mouse are indexed against GENCODE as well as Ensembl, since their
-RNA-seq is often quantified against GENCODE, whose gene set differs in size from
-Ensembl's at the same release. `detect_release()` ranks across both and reports
-which one each row came from in `source`.
+The index has Ensembl rows and GENCODE rows for human and mouse. Much RNA-seq
+data uses GENCODE, and its gene count is different from Ensembl at the same
+release. `detect_release()` ranks the two families together. The `source`
+column shows the family of each row.
 
-## Caution around new releases
+## Oldest and newest releases
 
-The index covers a fixed range of releases. If your best match is the oldest
-or newest release in that range, treat it with caution. Your IDs may come from
-a release just outside the range.
-`detect_release()` warns when this happens.
+The index covers a fixed range of releases. If your best match is the oldest or
+the newest release in this range, be careful. Your IDs can come from a release
+outside the range. `detect_release()` gives a warning in this condition.
 
 ```{r edge}
 head(detect_release(c("ENSG00000141510", "ENSG00000012048"), species = "human"), 3)
+```
+
+## Use the functions
+
+Each function below can take a `mapping`, the gene table of one release. We
+use the small human table in the package for this vigentte. If you
+do not give `mapping`, the function fetches the table from Ensembl. It uses the
+`species` and `release` if provided or otherwise infers it from the ID.
+
+```{r map}
+hs <- read.delim(system.file("extdata", "example_mapping.tsv",
+  package = "genevintage"
+))
+head(hs[, c("id", "name", "chr", "biotype")], 3)
+```
+
+`fetch_mapping()` gets the full table of a release. It reads the Ensembl GTF
+one time and keeps a copy in the cache:
+
+```r
+full <- fetch_mapping("human", release = 116)
+dim(full)
+#> [1] 78941     9
+```
+
+### Change IDs to names
+
+`geneid2name()` keeps the ID of a gene that has no name. The `mapped` attribute
+shows the IDs that got a real name:
+
+```{r names}
+ids <- c("ENSG00000141510.16", "ENSG00000012048", "ENSG00000284616")
+geneid2name(ids, mapping = hs)
+```
+
+For a matrix, the function changes the row names:
+
+```{r names-matrix}
+m <- matrix(1:6, nrow = 3, dimnames = list(ids, c("s1", "s2")))
+geneid2name(m, mapping = hs)
+```
+
+`gene_ids()` changes names to IDs. `annotate_genes()` gives the full table row
+for each ID or name:
+
+```{r lookup}
+gene_ids(c("TP53", "BRCA1"), mapping = hs)
+annotate_genes(c("TP53", "ENSG00000198804", "MALAT1"), mapping = hs)
+```
+
+### Find classes of genes
+
+Each class function returns the genes of one class:
+
+```{r classes}
+cols <- c("name", "chr", "biotype")
+mito_genes(mapping = hs)[, cols]
+sex_genes(mapping = hs, which = "Y")[, cols]
+ribosomal_genes(mapping = hs)[, cols]
+hemoglobin_genes(mapping = hs)[, cols]
+mhc_genes(mapping = hs)[, cols]
+```
+
+Other functions return RNA classes and biotypes:
+
+```{r rna}
+trna_genes(mapping = hs)[, cols]
+rrna_genes(mapping = hs)[, cols]
+lncrna_genes(mapping = hs)[, cols]
+genes_by_biotype("pseudogene", mapping = hs)[, cols]
+table(noncoding_genes(mapping = hs)$biotype)
+gene_biotypes(mapping = hs)
+```
+
+If you give IDs or names, the function keeps only those in the class. The
+`input` column holds your values, so you can use it to select matrix rows:
+
+```{r input}
+coding_genes(c("TP53", "MALAT1", "XIST"), mapping = hs)[, c("input", cols)]
+counts <- matrix(1:72, ncol = 2, dimnames = list(hs$id, c("s1", "s2")))
+mt <- mito_genes(rownames(counts), mapping = hs)
+colSums(counts[mt$input, ]) / colSums(counts) # mitochondrial fraction
+```
+
+The sex chromosomes come from the annotation. Chicken has Z and W:
+
+```r
+sex_genes(species = "chicken", which = "W", release = 116)[1:3, cols]
+#> gallus_gallus, ensembl release 116
+#>      name chr        biotype
+#> 1    <NA>   W protein_coding
+#> 2    <NA>   W protein_coding
+#> 3 UBAP2L2   W protein_coding
+```
+
+### Repair excel corruputed gene names
+
+Excel changes `SEPT9` to `9-Sep` and `DEC1` to `1-Dec`. `correct_genenames()`
+can fix these corruptions. It changes a name only if one gene in the table fits:
+
+```{r excel}
+x <- c("9-Sep", "1-Dec", "1-Mar", "TP53")
+fixed <- correct_genenames(x, mapping = hs)
+as.vector(fixed)
+attr(fixed, "ambiguous")
+```
+
+`1-Mar` can be `MARCHF1` or `MTARC1`, so it stays unchanged. An older release
+gives the older names:
+
+```r
+as.vector(correct_genenames(c("9-Sep", "1-Dec"),
+  species = "human", release = 95, quiet = TRUE
+))
+#> [1] "SEPT9" "DEC1"
+```
+
+### Change transcripts to genes
+
+`transcript2gene()` gives the gene of each transcript. `aggregate_transcripts()`
+adds the counts of the transcripts of each gene:
+
+```{r tx}
+tx <- data.frame(
+  transcript_id = c("ENST00000269305", "ENST00000357654"),
+  id = c("ENSG00000141510", "ENSG00000012048"), name = c("TP53", "BRCA1")
+)
+tx_ids <- c("ENST00000269305.9", "ENST00000357654.9")
+transcript2gene(tx_ids, mapping = tx)
+tc <- matrix(1:4, nrow = 2, dimnames = list(tx_ids, c("s1", "s2")))
+aggregate_transcripts(tc, mapping = tx)
+```
+
+Without `mapping`, the function finds the species and release from the IDs:
+
+```r
+transcript2gene(c("ENSMUST00000178537.2", "ENSMUST00000178862.2"))
+#> mus_musculus, ensembl release 116 (assembly 39): 2 of 2 transcripts mapped
+#>                  input      transcript_id            gene_id gene_name
+#> 1 ENSMUST00000178537.2 ENSMUST00000178537 ENSMUSG00000095668     Trbd1
+#> 2 ENSMUST00000178862.2 ENSMUST00000178862 ENSMUSG00000094569     Trbd2
+```
+
+### Use Ensembl data
+
+These functions read Ensembl files, so they need a network connection.
+`orthologs()` reads Ensembl Compara. `ortholog_species()` lists the species
+that Compara covers:
+
+```r
+orthologs(c("ENSG00000141510", "ENSG00000012048"), to = "mouse", release = 116)
+#>                id  name        ortholog_id ortholog_name    homology_type
+#> 1 ENSG00000012048 BRCA1 ENSMUSG00000017146         Brca1 ortholog_one2one
+#> 2 ENSG00000141510  TP53 ENSMUSG00000059552         Trp53 ortholog_one2one
+#>   identity ortholog_identity high_confidence
+#> 1  56.0923           57.6711            TRUE
+#> 2  77.3537           77.9487            TRUE
+```
+
+`compare_releases()` gives the genes that changed between two releases:
+
+```r
+d <- compare_releases("human", from = 110, to = 116)
+#> homo_sapiens 110 -> 116: 17456 added, 1269 removed, 1403 renamed, 1370 retyped
+```
+
+`entrez_ids()` gives the Entrez ID of each gene. `gene_lengths()` gives the
+exon-union length, which TPM and FPKM need:
+
+```r
+entrez_ids(c("TP53", "BRCA1"), species = "human", release = 116)
+#> homo_sapiens, ensembl release 116
+#>   input              id  name entrez
+#> 1  TP53 ENSG00000141510  TP53   7157
+#> 2 BRCA1 ENSG00000012048 BRCA1    672
+gene_lengths("human", release = 116, ids = c("ENSG00000141510", "ENSG00000012048"))
+#> ENSG00000141510 ENSG00000012048 
+#>            8043           14232
+```
+
+The `fetch_*()` and `stream_*()` functions read the Ensembl files that these
+functions use. `gene_cache()` lists the cached files, and
+`gene_cache(clear = TRUE)` removes them.
+
+### Species and identifier schemes
+
+`resolve_species()` changes a common name to an Ensembl name.
+`species_table()` lists the names:
+
+```{r species}
+resolve_species("Norway rat")
+species_table("zebrafish")
+```
+
+`parse_ens()` splits Ensembl IDs into their parts. `guess_scheme()` finds the
+scheme of a set of IDs:
+
+```{r parse}
+parse_ens(c("ENSG00000141510.16", "ENSMUST00000178537.2"))
+guess_scheme(c("FBgn0000008", "FBgn0000014", "FBgn0000015"))$scheme
+```
+
+Gene names do not have a prefix. `detect_species_names()` calculates 
+scores for each species based on overlapping index. You can generate 
+the index yourself:
+
+```{r symbols}
+ix <- build_symbol_index(transform(hs, species = "homo_sapiens", release = "116"))
+symbols <- c("TP53", "BRCA1", "GAPDH", "ACTB", "XIST", "HBB", "MALAT1", "PTPRC")
+detect_species_names(symbols, ix, min_overlap = 5)
 ```

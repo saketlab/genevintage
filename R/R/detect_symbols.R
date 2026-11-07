@@ -2,9 +2,8 @@
 
 #' Build a compact species/release gene-symbol index from GTF mappings
 #'
-#' @param mappings A named list of mapping data frames returned by
-#'   [fetch_mapping()], or one such data frame with `species` and `release`
-#'   columns.
+#' @param mappings A named list of mapping data frames that [fetch_mapping()]
+#'   returns, or one such data frame with `species` and `release` columns.
 #' @param min_release Optional minimum release number.
 #' @return A data frame with `species`, `release`, `assembly`, `source`, and
 #'   `symbol`.
@@ -44,10 +43,10 @@ build_symbol_index <- function(mappings, min_release = NULL) {
 
 #' Fetch GTF mappings and build a symbol index
 #'
-#' @param species Species names accepted by [resolve_species()].
+#' @param species Species names that [resolve_species()] accepts.
 #' @param releases Ensembl/GENCODE release numbers to fetch.
 #' @param source Annotation family.
-#' @return A symbol index suitable for [detect_species_names()].
+#' @return A symbol index that [detect_species_names()] can use.
 #' @export
 #' @examplesIf interactive()
 #' ix <- build_symbol_index_from_gtf("yeast", releases = 116)
@@ -71,17 +70,20 @@ build_symbol_index_from_gtf <- function(species, releases, source = "ensembl") {
 
 #' Detect species from gene symbols
 #'
-#' Scores each indexed species/release by informative symbol overlap. Common
-#' symbols are downweighted and Excel-prone date-like symbols are excluded.
-#' Results below the overlap or score threshold have `status = "insufficient"`;
-#' remaining results are `"ambiguous"` unless the top candidate meets the margin.
+#' This function scores each indexed species and release by informative symbol
+#' overlap. Common symbols get a lower weight. The function excludes date-like
+#' symbols that Excel can change. Results less than the overlap or score
+#' threshold have `status = "insufficient"`. If the top candidate meets the
+#' margin, its status is `"selected"`. The remaining results are `"ambiguous"`.
 #' @param symbols Character vector of gene names.
 #' @param index A symbol index from [build_symbol_index()].
-#' @param min_overlap Minimum informative symbols required.
+#' @param min_overlap Minimum number of informative symbols that a result must
+#'   have.
 #' @param min_score Minimum weighted overlap fraction.
-#' @param min_margin Required score gap between the top two candidates.
-#' @return Ranked data frame with `species`, `release`, `score`, `overlap`,
-#'   `margin`, and `status`.
+#' @param min_margin Necessary score gap between the top two candidates.
+#' @return A ranked data frame with `species`, `release`, `assembly`, `source`,
+#'   `overlap`, `score`, `margin`, and `status`. `margin` is `NA` after the first
+#'   row. The data frame is empty when no symbol is informative.
 #' @export
 #' @examples
 #' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))

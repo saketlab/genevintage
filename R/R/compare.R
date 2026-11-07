@@ -2,21 +2,25 @@
 
 #' Compare two releases of one annotation
 #'
-#' Joins two vintages on the stable identifier and reports what differs: genes
-#' the newer release added, genes it dropped, and genes whose symbol or biotype
-#' changed. Rows that are identical in both are not returned.
+#' This function joins two releases on the stable identifier and reports the
+#' differences. It reports genes that are only in `to` (`"added"`), genes that
+#' are only in `from` (`"removed"`), and genes with a changed name or biotype. It
+#' does not return rows that are identical in the two releases.
 #'
-#' Added and removed genes are identified by stable identifier presence.
-#' Finding a successor to a retired identifier requires a separate lookup.
+#' The function finds added and removed genes from the presence of the stable
+#' identifier. To find the successor of a retired identifier, you must do a
+#' separate lookup.
 #'
-#' @param species Species in any form [resolve_species()] accepts.
-#' @param from,to The two releases, in either order.
-#' @param assembly,source Passed to [fetch_mapping()]. Both releases are read
-#'   from the same assembly and annotation family to isolate release changes.
-#' @param quiet Suppress the summary message.
+#' @param species Species in any form that [resolve_species()] accepts.
+#' @param from,to The two releases. If `to` is the older release, `"added"` and
+#'   `"removed"` change places.
+#' @param assembly,source The function passes these to [fetch_mapping()]. It
+#'   reads the two releases from the same assembly and annotation family, to
+#'   isolate the release changes.
+#' @param quiet Do not show the summary message.
 #' @return A data frame of `id`, `change` (`"added"`, `"removed"`, `"renamed"`
 #'   or `"retyped"`), `name_from`, `name_to`, `biotype_from` and `biotype_to`.
-#' @seealso [detect_release()] to find out which vintages you have.
+#' @seealso [detect_release()] to find which releases you have.
 #' @export
 #' @examplesIf interactive()
 #' d <- compare_releases("human", from = 110, to = 116)
@@ -40,7 +44,6 @@ compare_releases <- function(species, from, to, assembly = NULL, source = NULL,
     stringsAsFactors = FALSE
   )
 
-  # paired missing values compare equal
   same <- function(x, y) (is.na(x) & is.na(y)) | (!is.na(x) & !is.na(y) & x == y)
   out$change <- ifelse(is.na(ia), "added",
     ifelse(is.na(ib), "removed",

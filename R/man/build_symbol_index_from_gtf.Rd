@@ -10,14 +10,14 @@ build_symbol_index_from_gtf(species, releases, source = "ensembl")
 BuildSymbolIndexFromGTF(species, releases, source = "ensembl")
 }
 \arguments{
-\item{species}{Species names accepted by \code{\link[=resolve_species]{resolve_species()}}.}
+\item{species}{Species names that \code{\link[=resolve_species]{resolve_species()}} accepts.}
 
 \item{releases}{Ensembl/GENCODE release numbers to fetch.}
 
 \item{source}{Annotation family.}
 }
 \value{
-A symbol index suitable for \code{\link[=detect_species_names]{detect_species_names()}}.
+A symbol index that \code{\link[=detect_species_names]{detect_species_names()}} can use.
 }
 \description{
 Fetch GTF mappings and build a symbol index

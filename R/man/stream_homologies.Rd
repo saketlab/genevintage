@@ -12,20 +12,20 @@ StreamHomologies(url, to, swap = FALSE, chunk = 2e+05)
 \arguments{
 \item{url}{A Compara \code{homologies.tsv.gz} URL.}
 
-\item{to}{Ensembl species name to keep, e.g. \code{"mus_musculus"}.}
+\item{to}{Ensembl species name to keep, for example \code{"mus_musculus"}.}
 
-\item{swap}{Reverse the pair when reading it from the target species' file,
-including the direction of one-to-many relationships.}
+\item{swap}{Reverse the pair when you read it from the file of the target
+species. This includes the direction of one-to-many relationships.}
 
-\item{chunk}{Lines to decompress per iteration.}
+\item{chunk}{Lines to decompress in each iteration.}
 }
 \value{
 A data frame of \code{id}, \code{ortholog_id}, \code{homology_type}, \code{identity},
 \code{ortholog_identity}, \code{high_confidence}.
 }
 \description{
-Filters the Compara stream in chunks to retain orthologs for the requested
-target species, limiting memory to the selected pair.
+This function filters the Compara stream in chunks and keeps the orthologs
+for the requested target species. This limits memory to the selected pair.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

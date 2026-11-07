@@ -27,37 +27,39 @@ AnnotateGenes(
 }
 \arguments{
 \item{ids}{Optional character vector of gene identifiers or gene names. When
-given, the species and release are detected from them and only these genes
-are considered. When omitted, \code{species} must be named and the whole
-mitochondrial gene set for its newest indexed release is returned.}
+you give \code{ids}, the function detects the species and release from them and
+examines only these genes. When you omit \code{ids}, you must name \code{species}.
+The function then returns the full mitochondrial gene set for the newest
+indexed release of that species.}
 
-\item{species, release, assembly, source}{Skip detection by naming them.
-\code{species} accepts anything \code{\link[=resolve_species]{resolve_species()}} does.}
+\item{species, release, assembly, source}{Give these values to skip detection.
+\code{species} accepts every form that \code{\link[=resolve_species]{resolve_species()}} accepts.}
 
-\item{mapping}{Supply an annotation directly to bypass detection and
-downloading. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype},
-as \code{\link[=fetch_mapping]{fetch_mapping()}} returns; supports local GTFs and custom builds.}
+\item{mapping}{An annotation that you supply directly to bypass detection and
+download. A data frame with at least \code{id}, \code{name}, \code{chr} and \code{biotype}, as
+\code{\link[=fetch_mapping]{fetch_mapping()}} returns. It supports local GTFs and custom builds.}
 
-\item{quiet}{Suppress the message reporting what was detected.}
+\item{quiet}{Do not show the message that reports the detected values.}
 }
 \value{
-A data frame of \code{input}, \code{id}, \code{name}, \code{chr}, \code{biotype} and, where
-the annotation carries them, \code{start}, \code{end}, \code{strand} and \code{span}. \code{span} is
-the genomic extent from first to last base. See \code{\link[=stream_gtf]{stream_gtf()}}.
+A data frame of \code{input}, \code{id}, \code{name}, \code{chr}, \code{biotype} and, if the
+annotation has them, \code{start}, \code{end}, \code{strand} and \code{span}. \code{span} is the
+genomic extent from the first base to the last base. See \code{\link[=stream_gtf]{stream_gtf()}}.
 }
 \description{
-Symbol, biotype and coordinates in one table, for genes given as identifiers
-or as names. The caller's own token comes back in \code{input}, so the result
-joins straight onto a results table or a feature frame.
+This function gives the gene name, biotype and coordinates in one table, for
+genes that you give as identifiers or as names. Your own token comes back in
+\code{input}, so you can join the result directly to a results table or a feature
+frame.
 }
 \details{
-Unmatched inputs are retained with \code{NA} columns. Names matching several
-genes yield a row for each.
+The function keeps unmatched inputs with \code{NA} columns. A name that matches
+several genes gives one row for each gene.
 }
 \examples{
 hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
 annotate_genes(c("TP53", "ENSG00000198804", "MALAT1"), mapping = hs)
 }
 \seealso{
-\code{\link[=gene_names]{gene_names()}} for one value per input.
+\code{\link[=gene_names]{gene_names()}} for one value for each input.
 }

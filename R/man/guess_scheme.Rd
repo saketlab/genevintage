@@ -3,7 +3,7 @@
 \name{guess_scheme}
 \alias{guess_scheme}
 \alias{GuessScheme}
-\title{Which identifier scheme a vector of IDs uses}
+\title{Identifier scheme of identifiers}
 \usage{
 guess_scheme(ids, min_purity = 0.5)
 
@@ -12,13 +12,14 @@ GuessScheme(ids, min_purity = 0.5)
 \arguments{
 \item{ids}{Character vector of identifiers.}
 
-\item{min_purity}{Smallest matching fraction to accept a scheme.}
+\item{min_purity}{Smallest match fraction that the function accepts for a
+scheme.}
 }
 \value{
-A list with \code{scheme}, \code{purity} and the per-scheme fractions.
+A list with \code{scheme}, \code{purity} and the fraction for each scheme.
 }
 \description{
-Which identifier scheme a vector of IDs uses
+Identifier scheme of identifiers
 }
 \examples{
 guess_scheme(c("ENSG00000141510", "ENSG00000012048"))$scheme

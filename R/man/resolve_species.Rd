@@ -10,23 +10,24 @@ resolve_species(x, quiet = FALSE)
 ResolveSpecies(x, quiet = FALSE)
 }
 \arguments{
-\item{x}{A species name in any of the accepted forms.}
+\item{x}{A species name in one of the accepted forms.}
 
-\item{quiet}{Suppress the message reporting a partial match.}
+\item{quiet}{Do not show the message that reports a partial match.}
 }
 \value{
-The Ensembl species name, e.g. \code{"homo_sapiens"}.
+The Ensembl species name, for example \code{"homo_sapiens"}.
 }
 \description{
-Accepts the Ensembl name (\code{"homo_sapiens"}), the scientific name
-(\code{"Homo sapiens"}), Ensembl's display name (\code{"Zebrafish"}, \code{"Giant panda"})
-or a common shorthand (\code{"human"}, \code{"mouse"}, \code{"rat"}, \code{"fly"}, \code{"yeast"}).
-Matching ignores case, punctuation and underscores.
+This function accepts the Ensembl name (\code{"homo_sapiens"}), the scientific
+name (\code{"Homo sapiens"}) or the Ensembl display name (\code{"Zebrafish"},
+\code{"Giant panda"}). It also accepts a common short name (\code{"human"}, \code{"mouse"},
+\code{"rat"}, \code{"fly"}, \code{"yeast"}). The match ignores case, punctuation and
+underscores.
 }
 \details{
-An unambiguous partial match is accepted and reported; an ambiguous one is
-refused with the candidates. The \code{"mouse"} alias selects \code{mus_musculus}
-even when strain genomes also match the word.
+The function accepts and reports an unambiguous partial match. It refuses an
+ambiguous partial match and shows the candidates. The \code{"mouse"} alias selects
+\code{mus_musculus} even when strain genomes also match the word.
 }
 \examples{
 resolve_species("human")

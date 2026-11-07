@@ -80,7 +80,7 @@ LNCRNA_BIOTYPES <- paste0(
   }
   # identify stable IDs once; gene symbols alone require a release fallback
   x <- if (is.null(ids)) character() else .as_ids(ids)
-  own <- x[.looks_like_id(x)]
+  own <- x[.datable(x)]
   datable <- length(own) > 0L
   if (is.null(species)) {
     if (!datable) {
@@ -115,9 +115,9 @@ LNCRNA_BIOTYPES <- paste0(
 
 #' Pick the rows of an annotation a caller's tokens refer to
 #'
-#' Match each token as an identifier and as a gene name, preferring the ID
-#' match. Return the caller's token in `input` for row subsetting and retain
-#' the annotation's stable identifier in `id`.
+#' Match each token as an identifier and as a gene name. The ID match has
+#' priority. Return the caller's token in `input`, so that the caller can select
+#' rows, and keep the stable identifier of the annotation in `id`.
 #' @noRd
 .restrict <- function(map, ids) {
   if (is.null(ids)) {
@@ -134,26 +134,27 @@ LNCRNA_BIOTYPES <- paste0(
 
 #' Mitochondrial genes
 #'
-#' Selects genes by mitochondrial sequence names in the annotation for use in
-#' mitochondrial count fractions. Sequence-name matching supports the naming
-#' conventions of different species.
+#' This function selects genes by the mitochondrial sequence names in the
+#' annotation. Use the result to calculate mitochondrial count fractions. The
+#' sequence-name match supports the name conventions of different species.
 #'
 #' @param ids Optional character vector of gene identifiers or gene names. When
-#'   given, the species and release are detected from them and only these genes
-#'   are considered. When omitted, `species` must be named and the whole
-#'   mitochondrial gene set for its newest indexed release is returned.
-#' @param species,release,assembly,source Skip detection by naming them.
-#'   `species` accepts anything [resolve_species()] does.
-#' @param mapping Supply an annotation directly to bypass detection and
-#'   downloading. A data frame with at least `id`, `name`, `chr` and `biotype`,
-#'   as [fetch_mapping()] returns; supports local GTFs and custom builds.
-#' @param quiet Suppress the message reporting what was detected.
+#'   you give `ids`, the function detects the species and release from them and
+#'   examines only these genes. When you omit `ids`, you must name `species`.
+#'   The function then returns the full mitochondrial gene set for the newest
+#'   indexed release of that species.
+#' @param species,release,assembly,source Give these values to skip detection.
+#'   `species` accepts every form that [resolve_species()] accepts.
+#' @param mapping An annotation that you supply directly to bypass detection and
+#'   download. A data frame with at least `id`, `name`, `chr` and `biotype`, as
+#'   [fetch_mapping()] returns. It supports local GTFs and custom builds.
+#' @param quiet Do not show the message that reports the detected values.
 #'
-#' @return A data frame of `id`, `name`, `chr` and `biotype`, one row per
-#'   mitochondrial gene. When `ids` were given, an `input` column comes first
-#'   holding the caller's own token, identifier or gene name as passed, so
-#'   `rownames(m) %in% mito_genes(rownames(m))$input` subsets a
-#'   matrix directly whichever kind its row names are.
+#' @return A data frame of `id`, `name`, `chr` and `biotype`, one row for each
+#'   mitochondrial gene. When you give `ids`, an `input` column comes first.
+#'   This column holds your own token, identifier or gene name, as you passed
+#'   it. `rownames(m) %in% mito_genes(rownames(m))$input` subsets a matrix
+#'   directly, for both kinds of row names.
 #'
 #' @seealso [sex_genes()] for the sex chromosomes.
 #' @export
@@ -175,16 +176,16 @@ mito_genes <- function(ids = NULL, species = NULL, release = NULL,
 
 #' Sex-chromosome genes
 #'
-#' Sex chromosome names vary by clade: mammals use X and Y, birds Z and W,
-#' and C. elegans X. Annotations without recognised sex chromosomes return
-#' no rows.
+#' Each clade has its own sex chromosome names. Mammals use X and Y, birds use Z
+#' and W, and C. elegans uses X. The function returns no rows for an annotation
+#' without recognized sex chromosomes.
 #'
 #' @inheritParams mito_genes
-#' @param which Restrict to one chromosome: `"X"`, `"Y"`, `"Z"` or `"W"`.
-#'   Defaults to every sex chromosome the annotation has.
+#' @param which Keep only one chromosome: `"X"`, `"Y"`, `"Z"` or `"W"`. The
+#'   default is every sex chromosome that the annotation has.
 #'
-#' @return A data frame of `id`, `name`, `chr` and `biotype`, one row per gene,
-#'   shaped as [mito_genes()] returns.
+#' @return A data frame of `id`, `name`, `chr` and `biotype`, one row for each
+#'   gene, with the same shape as the [mito_genes()] result.
 #'
 #' @seealso [mito_genes()].
 #' @export
@@ -239,7 +240,7 @@ sex_genes <- function(ids = NULL, which = NULL, species = NULL, release = NULL,
 #'
 #' Test `pseudogene` before the immunoglobulin prefix so `IG_V_pseudogene`
 #' lands with pseudogenes. Missing biotypes, TEC and artifact entries are
-#' `other`; remaining biotypes are `noncoding`.
+#' `other`. The remaining biotypes are `noncoding`.
 #' @noRd
 .biotype_class <- function(x) {
   # classify distinct biotypes once when the input exceeds 100 entries
@@ -262,11 +263,11 @@ BIOTYPE_CLASSES <- c("coding", "noncoding", "pseudogene", "immune", "other")
 
 #' What biotypes an annotation contains
 #'
-#' Use this to see what is there before filtering: the vocabulary differs by
-#' species and drifts between releases.
+#' Use this function to see the biotypes before you filter. The vocabulary is
+#' different for each species and changes between releases.
 #'
 #' @inheritParams mito_genes
-#' @return A data frame of `biotype`, `class` and `n`, commonest first.
+#' @return A data frame of `biotype`, `class` and `n`, most common first.
 #' @seealso [genes_by_biotype()], [coding_genes()], [noncoding_genes()].
 #' @export
 #' @examples
@@ -293,10 +294,10 @@ gene_biotypes <- function(ids = NULL, species = NULL, release = NULL,
 #' @param biotype One or more Ensembl biotypes (`"lncRNA"`, `"miRNA"`,
 #'   `"snoRNA"`, ...) or class names: `"coding"`, `"noncoding"`, `"pseudogene"`,
 #'   `"immune"` (immunoglobulin and T-cell receptor segments) or `"other"`.
-#'   [gene_biotypes()] lists what an annotation actually has.
+#'   [gene_biotypes()] lists the biotypes that an annotation contains.
 #'
-#' @return A data frame of `id`, `name`, `chr` and `biotype`, shaped as
-#'   [mito_genes()] returns.
+#' @return A data frame of `id`, `name`, `chr` and `biotype`, with the same
+#'   shape as the [mito_genes()] result.
 #' @seealso [gene_biotypes()] to see the vocabulary first.
 #' @export
 #' @examples
@@ -326,10 +327,9 @@ genes_by_biotype <- function(biotype, ids = NULL, species = NULL, release = NULL
 
 #' Protein-coding genes
 #'
-#' Selects the `protein_coding` biotype.
-#' Immunoglobulin and T-cell receptor segments encode protein too but carry
-#' their own biotypes; ask for `"immune"` through [genes_by_biotype()] to add
-#' them.
+#' This function selects the `protein_coding` biotype. Immunoglobulin and T-cell
+#' receptor segments also encode protein, but they have their own biotypes. To
+#' add them, ask for `"immune"` through [genes_by_biotype()].
 #'
 #' @inheritParams mito_genes
 #' @return A data frame of `id`, `name`, `chr` and `biotype`.
@@ -347,9 +347,9 @@ coding_genes <- function(ids = NULL, species = NULL, release = NULL,
 
 #' Non-coding RNA genes
 #'
-#' Genes transcribing functional RNA: lncRNA, miRNA, snRNA, snoRNA, rRNA and
-#' the rest. Pseudogenes are a separate class; ask for `"pseudogene"` through
-#' [genes_by_biotype()] when you want them.
+#' These genes transcribe functional RNA: lncRNA, miRNA, snRNA, snoRNA, rRNA and
+#' the other types. Pseudogenes are a separate class. To get them, ask for
+#' `"pseudogene"` through [genes_by_biotype()].
 #'
 #' @inheritParams mito_genes
 #' @return A data frame of `id`, `name`, `chr` and `biotype`.
@@ -368,22 +368,22 @@ noncoding_genes <- function(ids = NULL, species = NULL, release = NULL,
 #'
 #' `which` selects the ribosomal set:
 #'
-#' * `"protein"` (the default): the genes encoding the ribosome's proteins,
-#'   the set behind a single-cell ribosomal-content metric.
+#' * `"protein"` (the default): the genes that encode the proteins of the
+#'   ribosome. A single-cell ribosomal-content metric uses this set.
 #' * `"rrna"`: the RNA components, by biotype (`rRNA` and `Mt_rRNA`).
-#' * `"mito"`: the mitoribosome's proteins, named with an `M` prefix. These are
-#'   nuclear genes; [mito_genes()] does not return them.
-#' * `"all"`: every one of the above.
+#' * `"mito"`: the proteins of the mitoribosome, with names that have an `M`
+#'   prefix. These genes are nuclear. [mito_genes()] does not return them.
+#' * `"all"`: all of the sets above.
 #'
-#' The `"^RP[SL]"` symbol pattern is restricted to `protein_coding` genes to
-#' exclude pseudogenes and lncRNAs. A name rule also excludes S6 kinases
+#' The function limits the `"^RP[SL]"` symbol pattern to `protein_coding` genes,
+#' to exclude pseudogenes and lncRNAs. A name rule also excludes S6 kinases
 #' (`RPS6KA1` to `RPS6KL1`) and `RPS19BP1`.
 #'
 #' @inheritParams mito_genes
-#' @param which Which ribosomal set to return. See details.
+#' @param which The ribosomal set to return. See details.
 #'
-#' @return A data frame of `id`, `name`, `chr` and `biotype`, shaped as
-#'   [mito_genes()] returns.
+#' @return A data frame of `id`, `name`, `chr` and `biotype`, with the same
+#'   shape as the [mito_genes()] result.
 #'
 #' @seealso [mito_genes()], [genes_by_biotype()].
 #' @export
@@ -422,15 +422,15 @@ ribosomal_genes <- function(ids = NULL, which = c("protein", "rrna", "mito", "al
 #' Transfer RNA genes
 #'
 #' Ensembl names them `Mt_tRNA` on the mitochondrial chromosome and `tRNA` in
-#' the nucleus. Which of those an annotation actually contains varies: the
-#' vertebrate GTFs carry only the mitochondrial tRNAs, since nuclear tRNA genes
-#' are predicted separately and lie outside the gene set. Invertebrate, fungal
-#' and plant annotations include the nuclear ones. The `chr` and `biotype`
-#' columns say which kind each row is.
+#' the nucleus. Different annotations contain different kinds. The vertebrate
+#' GTFs contain only the mitochondrial tRNAs. Nuclear tRNA genes in vertebrates
+#' come from a separate prediction and are outside the gene set. Invertebrate,
+#' fungal and plant annotations include the nuclear tRNAs. The `chr` and
+#' `biotype` columns tell the kind of each row.
 #'
 #' @inheritParams mito_genes
-#' @return A data frame of `id`, `name`, `chr` and `biotype`, shaped as
-#'   [mito_genes()] returns.
+#' @return A data frame of `id`, `name`, `chr` and `biotype`, with the same
+#'   shape as the [mito_genes()] result.
 #' @seealso [ribosomal_genes()], [genes_by_biotype()].
 #' @export
 #' @examples
@@ -452,16 +452,17 @@ trna_genes <- function(ids = NULL, species = NULL, release = NULL,
 
 #' Ribosomal RNA genes
 #'
-#' The RNA components of the ribosome, by biotype: `rRNA` in the nucleus and
-#' `Mt_rRNA` in the mitochondrion.
+#' These genes are the RNA components of the ribosome, by biotype: `rRNA` in the
+#' nucleus and `Mt_rRNA` in the mitochondrion.
 #'
-#' `rRNA_pseudogene` belongs with the pseudogenes. Ask for it with
+#' `rRNA_pseudogene` belongs with the pseudogenes. To get it, use
 #' `genes_by_biotype("rRNA_pseudogene")`.
 #'
 #' @inheritParams mito_genes
-#' @return A data frame of `id`, `name`, `chr` and `biotype`, shaped as
-#'   [mito_genes()] returns.
-#' @seealso [ribosomal_genes()] for the ribosome's *proteins*, [trna_genes()].
+#' @return A data frame of `id`, `name`, `chr` and `biotype`, with the same
+#'   shape as the [mito_genes()] result.
+#' @seealso [ribosomal_genes()] for the *proteins* of the ribosome,
+#'   [trna_genes()].
 #' @export
 #' @examples
 #' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
@@ -480,17 +481,18 @@ rrna_genes <- function(ids = NULL, species = NULL, release = NULL,
 
 #' Hemoglobin subunit genes
 #'
-#' The set behind a haemoglobin-contamination metric in single-cell work, beside
-#' [mito_genes()] and [ribosomal_genes()]. Named per clade: `HBA1`/`HBB` in
-#' human, `Hba-a1`/`Hbb-bs` in mouse, `hbaa1`/`hbba1` in zebrafish.
+#' This set gives a hemoglobin-contamination metric in single-cell work. Use it
+#' beside [mito_genes()] and [ribosomal_genes()]. The names are different in
+#' each clade: `HBA1`/`HBB` in human, `Hba-a1`/`Hbb-bs` in mouse,
+#' `hbaa1`/`hbba1` in zebrafish.
 #'
-#' Subunit-letter matching excludes `HBEGF`, `HBS1L` and `HBP1`.
-#' Requiring `protein_coding` also excludes haemoglobin pseudogenes such as
+#' The subunit-letter match excludes `HBEGF`, `HBS1L` and `HBP1`. The
+#' `protein_coding` condition also excludes hemoglobin pseudogenes such as
 #' `HBAP1`, `HBBP1` and `HBZP1`.
 #'
 #' @inheritParams mito_genes
-#' @return A data frame of `id`, `name`, `chr` and `biotype`, shaped as
-#'   [mito_genes()] returns.
+#' @return A data frame of `id`, `name`, `chr` and `biotype`, with the same
+#'   shape as the [mito_genes()] result.
 #' @seealso [mito_genes()], [ribosomal_genes()].
 #' @export
 #' @examples
@@ -511,19 +513,19 @@ hemoglobin_genes <- function(ids = NULL, species = NULL, release = NULL,
 
 #' Major histocompatibility complex genes
 #'
-#' The MHC, which human calls HLA. Every clade names it differently: `HLA-A` in
-#' human, `H2-K1` in mouse, `mhc1uba` in zebrafish, so matching `"^HLA-"` finds
-#' nothing outside primates.
+#' The name of the MHC in human is HLA. Each clade has a different name: `HLA-A`
+#' in human, `H2-K1` in mouse, `mhc1uba` in zebrafish. A match on
+#' `"^HLA-"` finds nothing outside primates.
 #'
-#' Requires `protein_coding` and an MHC family name pattern. The patterns
-#' exclude regional genes such as `B2M`, `TAP1`, `TAP2` and `MICA`.
-#' Annotations without matching genes return an empty result.
+#' This function selects `protein_coding` genes with an MHC family name pattern.
+#' The patterns exclude regional genes such as `B2M`, `TAP1`, `TAP2` and `MICA`.
+#' The function returns an empty result for an annotation with no match.
 #'
 #' @inheritParams mito_genes
-#' @return A data frame of `id`, `name`, `chr` and `biotype`, shaped as
-#'   [mito_genes()] returns.
+#' @return A data frame of `id`, `name`, `chr` and `biotype`, with the same
+#'   shape as the [mito_genes()] result.
 #' @seealso [genes_by_biotype()] for the immunoglobulin and T-cell receptor
-#'   segments, which are a different question.
+#'   segments.
 #' @export
 #' @examples
 #' hs <- read.delim(system.file("extdata", "example_mapping.tsv", package = "genevintage"))
@@ -553,17 +555,17 @@ mhc_genes <- function(ids = NULL, species = NULL, release = NULL,
 
 #' Long non-coding RNA genes
 #'
-#' Matches lncRNA biotype spellings across species and releases, including
-#' `lncRNA`, `lincRNA`, `antisense`, `processed_transcript` and
-#' `3prime_overlapping_ncrna`.
+#' This function matches the lncRNA biotype spellings across species and
+#' releases. These spellings include `lncRNA`, `lincRNA`, `antisense`,
+#' `processed_transcript` and `3prime_overlapping_ncrna`.
 #'
-#' Generic `ncRNA` entries are excluded. If the annotation contains them and
-#' the subset has no lncRNA matches, a message points to
+#' The function excludes generic `ncRNA` entries. If the annotation contains
+#' them and the subset has no lncRNA match, a message points to
 #' `genes_by_biotype("ncRNA")`.
 #'
 #' @inheritParams mito_genes
-#' @return A data frame of `id`, `name`, `chr` and `biotype`, shaped as
-#'   [mito_genes()] returns.
+#' @return A data frame of `id`, `name`, `chr` and `biotype`, with the same
+#'   shape as the [mito_genes()] result.
 #' @seealso [noncoding_genes()] for every non-coding class, [gene_biotypes()].
 #' @export
 #' @examples

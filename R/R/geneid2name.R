@@ -1,36 +1,36 @@
-# The end-to-end path: identifiers in, gene names out.
-
-#' Convert gene identifiers to gene names, detecting species and release
+#' Convert gene identifiers to gene names with species and release detection
 #'
-#' Detects the species from the identifier prefixes, ranks the Ensembl releases
-#' consistent with the identifier set, fetches that release's mapping (streamed
-#' once, then cached) and converts. Identifiers with no gene name are returned
-#' unchanged.
+#' This function detects the species from the identifier prefixes. It ranks the
+#' Ensembl releases that are consistent with the identifier set. It fetches the
+#' mapping of the best release and converts the identifiers.
 #'
 #' @param ids Character vector of gene identifiers.
-#' @param species Skip species detection by naming it. Any form
-#'   [resolve_species()] accepts: `"homo_sapiens"`, `"Homo sapiens"`,
-#'   `"Human"` or `"human"`.
-#' @param release Skip release detection by naming it.
-#' @param assembly Assembly suffix, e.g. `"37"` for human GRCh37. Detected
-#'   alongside the release when both are left `NULL`.
-#' @param source Annotation family: `"ensembl"`, or `"gencode"` /
-#'   `"gencode_all"` for GENCODE's primary and scaffold-inclusive gene sets.
-#'   Detected alongside the release.
-#' @param mapping Skip detection and use this `id`/`name` table, as accepted
-#'   by [gene_names()].
-#' @param unique Passed to [gene_names()]. Defaults to `TRUE` when `ids` is a
-#'   matrix, sparse `Matrix` or data frame, and to `FALSE` otherwise.
-#' @param quiet Suppress the message reporting what was detected.
-#' @param row_ids When `ids` is a matrix, sparse `Matrix` or data frame,
-#'   overrides which identifiers to detect and map. Defaults to `rownames(ids)`;
-#'   set this when `ids` has none.
+#' @param species Give this value to skip species detection. Any form that
+#'   [resolve_species()] accepts: `"homo_sapiens"`, `"Homo sapiens"`, `"Human"`
+#'   or `"human"`.
+#' @param release Give this value to skip release detection.
+#' @param assembly Assembly suffix, for example `"37"` for human GRCh37. The
+#'   function detects it together with the release when both are `NULL`.
+#' @param source Annotation family: `"ensembl"`, `"gencode"` for the primary
+#'   gene set of GENCODE, or `"gencode_all"` for its gene set with scaffolds.
+#'   The function detects it together with the release.
+#' @param mapping Skip detection and use this `id`/`name` table, in the form
+#'   that [gene_names()] accepts.
+#' @param unique The function passes this to [gene_names()]. The default is
+#'   `TRUE` when `ids` is a matrix, sparse `Matrix` or data frame, and `FALSE`
+#'   otherwise.
+#' @param quiet Do not show the message that reports the detected values. With
+#'   `mapping`, also do not give the warnings from [gene_names()]. Without
+#'   `mapping`, these warnings stay, because they can show a wrong detection.
+#' @param row_ids When `ids` is a matrix, sparse `Matrix` or data frame, this
+#'   argument overrides the identifiers to detect and map. The default is
+#'   `rownames(ids)`. Set this argument when `ids` has no row names.
 #'
-#' @return If `ids` is a plain vector: a character vector the same length as
-#'   `ids`, carrying `mapped`, `species`, `source`, `release` and `assembly`
-#'   attributes. If `ids` is a matrix, sparse `Matrix` or data frame: the same
-#'   object with only its row names replaced by gene names; dimensions, row
-#'   order and other attributes are preserved.
+#' @return If `ids` is a plain vector, a character vector of the same length as
+#'   `ids`, with `mapped`, `species`, `source`, `release` and `assembly`
+#'   attributes. If `ids` is a matrix, sparse `Matrix` or data frame, the same
+#'   object with only its row names replaced by gene names. The function keeps
+#'   the dimensions, row order and other attributes.
 #'
 #' @seealso [detect_species()], [detect_release()], [gene_names()].
 #' @export

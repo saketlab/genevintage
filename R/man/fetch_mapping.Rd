@@ -16,31 +16,33 @@ fetch_mapping(
 FetchMapping(species, release, assembly = NULL, source = NULL, refresh = FALSE)
 }
 \arguments{
-\item{species}{Species, in any form \code{\link[=resolve_species]{resolve_species()}} accepts:
+\item{species}{Species, in any form that \code{\link[=resolve_species]{resolve_species()}} accepts:
 \code{"homo_sapiens"}, \code{"Human"} or \code{"human"}.}
 
 \item{release}{Ensembl release number.}
 
-\item{assembly}{Assembly suffix as the index records it, e.g. \code{"38"} or
-\code{"37"}. Together with \code{species}, \code{source} and \code{release} it selects the index
-row that carries the annotation's FTP root and, where an assembly is
-frozen, the release its annotation actually stopped at.}
+\item{assembly}{Assembly suffix as the index records it, for example \code{"38"}
+or \code{"37"}. Together with \code{species}, \code{source} and \code{release}, it selects one
+index row. That row has the FTP root of the annotation. If an assembly is
+frozen, the row also has the release where its annotation stopped.}
 
-\item{source}{Annotation family: \code{"ensembl"}, or \code{"gencode"} /
-\code{"gencode_all"} for GENCODE's primary and scaffold-inclusive gene sets.
-Needed only where one release number exists in more than one of them.}
+\item{source}{Annotation family: \code{"ensembl"}, \code{"gencode"} for the primary
+gene set of GENCODE, or \code{"gencode_all"} for its gene set with scaffolds.
+This is necessary only where one release number exists in more than one
+family.}
 
-\item{refresh}{Re-download even when a cached copy exists.}
+\item{refresh}{Download the table again, even when a cached copy exists.}
 }
 \value{
 A data frame of \code{id}, \code{name}, \code{chr}, \code{start}, \code{end}, \code{strand},
-\code{span}, \code{id_version} and \code{biotype}, suitable as the \code{mapping} argument of
-\code{\link[=gene_names]{gene_names()}}. \code{span} is the genomic extent from first to last base;
-TPM and FPKM require exonic length. See \code{\link[=stream_gtf]{stream_gtf()}}.
+\code{span}, \code{id_version} and \code{biotype}, for use as the \code{mapping} argument of
+\code{\link[=gene_names]{gene_names()}}. \code{span} is the genomic extent from the first base to the
+last base. TPM and FPKM must use exonic length. See \code{\link[=stream_gtf]{stream_gtf()}}.
 }
 \description{
-Streamed from the Ensembl GTF on first use, then cached, so later calls are
-offline. Gene versions are read from GTF attributes or identifier suffixes.
+The function streams this table from the Ensembl GTF on first use and then
+caches it. The function reads gene versions from GTF attributes or
+identifier suffixes.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
