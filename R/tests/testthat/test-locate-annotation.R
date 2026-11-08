@@ -152,3 +152,21 @@ test_that("a mapping is checked before it is used", {
   expect_error(correct_genenames("9-Sep", mapping = "x"), "must be a data frame")
   expect_error(correct_genenames("9-Sep", mapping = data.frame(id = "g1")), "needs column")
 })
+
+test_that("a few stray IDs in a list of symbols do not set the release", {
+  skip_no_index()
+  rec <- recorder(mm_now())
+  local_mocked_bindings(fetch_mapping = rec$fetch)
+  x <- c("ENSMUSG00000053484", "Gnai3", "Pbsn", "Cdc45", "1-Mar")
+  correct_genenames(x, species = "mouse", quiet = TRUE)
+  expect_equal(rec$seen$release, .newest_release("mus_musculus"))
+})
+
+test_that("a list of mostly IDs still sets the release", {
+  skip_no_index()
+  rec <- recorder()
+  local_mocked_bindings(fetch_mapping = rec$fetch)
+  ids <- readLines(system.file("extdata", "example_ids.txt.gz", package = "genevintage"))
+  correct_genenames(c(ids, "9-Sep"), quiet = TRUE)
+  expect_equal(rec$seen$release, detect_release(ids)$release[1])
+})

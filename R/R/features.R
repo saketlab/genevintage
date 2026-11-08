@@ -91,8 +91,10 @@ LNCRNA_BIOTYPES <- paste0(
     species <- detect_species(own)$species[1]
   }
 
+  # a few stray IDs fit an old release, where 1-Mar loses its Marc1 reading
+  mostly_ids <- datable && length(own) * 2L >= sum(nzchar(x))
   if (is.null(release)) {
-    if (!datable) {
+    if (!mostly_ids) {
       release <- .newest_release(species)
       source <- "ensembl"
     } else {

@@ -89,8 +89,9 @@ candidate.
 The function compares candidates with \code{mapping} if you supply it. If not, it
 uses \code{species} at \code{release}. Without \code{release}, it uses the newest release,
 which has the current HGNC names (\code{SEPTIN9}, not \code{SEPT9}). But if \code{x} has
-stable IDs, it finds the release from these IDs. Without \code{species}, it finds
-the species from stable IDs in \code{x}, and it refuses a vector with only symbols.
+stable IDs for at least half of its names, it finds the release from these
+IDs. Without \code{species}, it finds the species from stable IDs in \code{x}, and it
+refuses a vector with only symbols.
 
 The nomenclature authority of the species gives more renames: HGNC for human,
 MGI for mouse, and ZFIN for zebrafish (\code{SEP15} to \code{SELENOF}, \code{sept9} to

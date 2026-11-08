@@ -217,8 +217,9 @@ DAMAGE <- list(
 #' The function compares candidates with `mapping` if you supply it. If not, it
 #' uses `species` at `release`. Without `release`, it uses the newest release,
 #' which has the current HGNC names (`SEPTIN9`, not `SEPT9`). But if `x` has
-#' stable IDs, it finds the release from these IDs. Without `species`, it finds
-#' the species from stable IDs in `x`, and it refuses a vector with only symbols.
+#' stable IDs for at least half of its names, it finds the release from these
+#' IDs. Without `species`, it finds the species from stable IDs in `x`, and it
+#' refuses a vector with only symbols.
 #'
 #' The nomenclature authority of the species gives more renames: HGNC for human,
 #' MGI for mouse, and ZFIN for zebrafish (`SEP15` to `SELENOF`, `sept9` to
